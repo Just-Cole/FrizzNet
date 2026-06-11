@@ -1,0 +1,119 @@
+using UnityEngine;
+using Steamworks;
+using FrizzNet.Core;
+using FrizzNet.Steam;
+using UnityEngine.InputSystem;
+
+namespace FrizzNet.Samples
+{
+    /// <summary>
+    /// Sample player controller demonstrating authority checks, movement input, 
+    /// and screen-space name tag rendering using Steamworks profile names.
+    /// </summary>
+    [RequireComponent(typeof(NetworkIdentity))]
+    [FrizzHelp("Reads keyboard inputs to move and rotate player characters possessing authority. Renders hovering profile name tags on screen.")]
+    public class DemoPlayerController : MonoBehaviour
+    {
+        private NetworkIdentity m_Identity;
+
+        [Header("Movement Settings")]
+        [SerializeField] private float m_Speed = 5f;
+
+        private Color m_PlayerColor;
+        private string m_SteamName = "Connecting...";
+
+        private void Awake()
+        {
+            m_Identity = GetComponent<NetworkIdentity>();
+        }
+
+        private void Start()
+        {
+            // Give each player a unique random color based on their Owner ID
+            Random.InitState((int)m_Identity.OwnerConnectionId);
+            m_PlayerColor = new Color(Random.value, Random.value, Random.value);
+
+            // Apply color to the material of the Cube
+            Renderer renderer = GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = m_PlayerColor;
+            }
+
+            // Fetch Steam Username associated with this player character
+            if (SteamManager.Initialized && m_Identity.OwnerConnectionId != 0)
+            {
+                m_SteamName = SteamFriends.GetFriendPersonaName(new CSteamID(m_Identity.OwnerConnectionId));
+            }
+            else
+            {
+                m_SteamName = "Local Bot";
+            }
+        }
+
+        private void Update()
+        {
+            // Only read input and move if this local client has authority over this object!
+            if (!m_Identity.HasAuthority) return;
+
+            float horizontal = 0f;
+            float vertical = 0f;
+
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) horizontal = -1f;
+                if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) horizontal = 1f;
+                if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) vertical = 1f;
+                if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) vertical = -1f;
+            }
+
+            if (Gamepad.current != null)
+            {
+                Vector2 stick = Gamepad.current.leftStick.ReadValue();
+                if (Mathf.Abs(stick.x) > 0.1f) horizontal = stick.x;
+                if (Mathf.Abs(stick.y) > 0.1f) vertical = stick.y;
+            }
+
+            Vector3 moveDirection = new Vector3(horizontal, 0f, vertical).normalized;
+
+            if (moveDirection.magnitude > 0.1f)
+            {
+                transform.Translate(moveDirection * m_Speed * Time.deltaTime, Space.World);
+                
+                // Rotate player towards movement direction
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+            }
+        }
+
+        private void OnGUI()
+        {
+            if (Camera.main == null) return;
+
+            // Project 3D player position to 2D Screen Space for a name tag
+            Vector3 worldPos = transform.position + Vector3.up * 1.2f;
+            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPos);
+
+            // Only draw if the player is in front of the camera
+            if (screenPos.z > 0)
+            {
+                string tag = m_Identity.IsLocalPlayer ? $"<b><color=#39FF14>{m_SteamName} (You)</color></b>" : m_SteamName;
+                
+                GUIStyle nameTagStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = 12,
+                    richText = true
+                };
+
+                // Draw background shadow
+                nameTagStyle.normal.textColor = Color.black;
+                GUI.Label(new Rect(screenPos.x - 100 + 1, Screen.height - screenPos.y - 12 + 1, 200, 24), tag, nameTagStyle);
+
+                // Draw foreground colored text
+                nameTagStyle.normal.textColor = m_Identity.IsLocalPlayer ? Color.green : Color.white;
+                GUI.Label(new Rect(screenPos.x - 100, Screen.height - screenPos.y - 12, 200, 24), tag, nameTagStyle);
+            }
+        }
+    }
+}

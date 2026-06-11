@@ -1,0 +1,19 @@
+{
+    "name": "FrizzNet.Editor",
+    "rootNamespace": "FrizzNet",
+    "references": [
+        "FrizzNet.Runtime",
+        "com.rlabrecque.steamworks.net"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
