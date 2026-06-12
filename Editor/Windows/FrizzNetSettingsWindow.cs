@@ -68,6 +68,9 @@ namespace FrizzNet.Editor.Windows
             DrawTransportStatus();
             GUILayout.Space(12);
 
+            DrawVoiceStatus();
+            GUILayout.Space(12);
+
             DrawSettings();
 
             GUILayout.EndVertical();
@@ -250,6 +253,62 @@ namespace FrizzNet.Editor.Windows
                 {
                     string owner = pair.Value.OwnerConnectionId == 0 ? "Global" : pair.Value.OwnerConnectionId.ToString();
                     EditorGUILayout.LabelField($" • {pair.Value.gameObject.name} [ID: {pair.Key}]", $"Owner: {owner}");
+                }
+            }
+
+            EndSection();
+        }
+
+        private void DrawVoiceStatus()
+        {
+            BeginSection("Voice Chat Monitor");
+
+            FrizzVoiceManager voiceManager = FrizzVoiceManager.Instance;
+
+            if (voiceManager == null)
+            {
+                DrawNotificationBox("FrizzVoiceManager is inactive. Attach FrizzVoiceManager component to your scene to monitor.", MessageType.Info);
+                EndSection();
+                return;
+            }
+
+            DrawStatusRow("Local Recording", voiceManager.IsRecording);
+
+            voiceManager.EnableVoice = EditorGUILayout.Toggle("Enable Voice Chat", voiceManager.EnableVoice);
+            voiceManager.UsePushToTalk = EditorGUILayout.Toggle("Use Push-To-Talk", voiceManager.UsePushToTalk);
+
+            if (voiceManager.UsePushToTalk)
+            {
+                voiceManager.PushToTalkKey = (KeyCode)EditorGUILayout.EnumPopup("PTT Key", voiceManager.PushToTalkKey);
+            }
+
+            voiceManager.SpatialAudio = EditorGUILayout.Toggle("Spatial 3D Audio", voiceManager.SpatialAudio);
+
+            if (voiceManager.SpatialAudio)
+            {
+                voiceManager.MaxAudioDistance = EditorGUILayout.Slider("Max Audio Distance", voiceManager.MaxAudioDistance, 5f, 100f);
+            }
+
+            voiceManager.VolumeMultiplier = EditorGUILayout.Slider("Volume Multiplier", voiceManager.VolumeMultiplier, 0f, 2f);
+
+            var speakers = voiceManager.ActiveSpeakers;
+            if (speakers.Count > 0)
+            {
+                GUILayout.Space(8);
+                GUILayout.Label("ACTIVE VOICE STREAMS", new GUIStyle(EditorStyles.miniBoldLabel) { normal = { textColor = m_NeonGreen } });
+                foreach (var pair in speakers)
+                {
+                    if (pair.Value != null)
+                    {
+                        string name = FrizzLobby.InLobby ? FrizzLobby.GetMemberName(new CSteamID(pair.Key)) : "Remote Client";
+                        string activity = pair.Value.IsPlaying ? "<color=#35FF35>SPEAKING</color>" : "<color=#AAAAAA>SILENT</color>";
+
+                        GUIStyle activeStyle = new GUIStyle(EditorStyles.label) { richText = true };
+                        EditorGUILayout.BeginHorizontal();
+                        GUILayout.Label($" • {name}", activeStyle);
+                        GUILayout.Label(activity, new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight, richText = true });
+                        EditorGUILayout.EndHorizontal();
+                    }
                 }
             }
 

@@ -14,7 +14,8 @@ namespace FrizzNet.Core
     /// message routing, and dynamic object spawning.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("The core manager coordinating player connection rosters, custom packet handlers routing, and network object spawn synchronization.", "file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Documentation/SetupGuide.md")]
+    [RequireComponent(typeof(SteamTransport))]
+    [FrizzHelp("The core manager coordinating player connection rosters, custom packet handlers routing, and network object spawn synchronization.", "index.html#NetworkManager")]
     public class NetworkManager : MonoBehaviour
     {
         public static NetworkManager Instance { get; private set; }
@@ -30,6 +31,7 @@ namespace FrizzNet.Core
         private const short MSG_SPAWN = -10;
         private const short MSG_DESTROY = -11;
         private const short MSG_TRANSFORM = -12;
+        private const short MSG_VOICE = -13;
 
         private INetworkTransport m_Transport;
         private readonly Dictionary<short, Action<ulong, MessageReader>> m_MessageHandlers = new Dictionary<short, Action<ulong, MessageReader>>();
@@ -72,6 +74,16 @@ namespace FrizzNet.Core
             BuildPrefabRegistry();
             RegisterSystemHandlers();
         }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            if (m_TransportComponent == null)
+            {
+                m_TransportComponent = GetComponent<SteamTransport>();
+            }
+        }
+#endif
 
         private void Start()
         {
@@ -188,6 +200,7 @@ namespace FrizzNet.Core
             RegisterHandler(MSG_SPAWN, HandleSystemSpawn);
             RegisterHandler(MSG_DESTROY, HandleSystemDestroy);
             RegisterHandler(MSG_TRANSFORM, HandleSystemTransform);
+            RegisterHandler(MSG_VOICE, HandleSystemVoice);
         }
 
         #endregion
@@ -555,6 +568,46 @@ namespace FrizzNet.Core
                         }
                     }
                 }
+            }
+        }
+
+        private void HandleSystemVoice(ulong connectionId, MessageReader reader)
+        {
+            ulong senderId = (ulong)reader.ReadLong();
+            int size = reader.ReadInt();
+            byte[] compressedData = reader.ReadRawBytes(size);
+
+            // Host replicates the voice packet to all other clients unreliably
+            if (IsHost)
+            {
+                using (MessageWriter writer = new MessageWriter())
+                {
+                    writer.WriteLong((long)senderId);
+                    writer.WriteInt(size);
+                    writer.WriteRawBytes(compressedData);
+
+                    byte[] payload = writer.ToArray();
+                    using (MessageWriter systemWriter = new MessageWriter())
+                    {
+                        systemWriter.WriteShort(MSG_VOICE);
+                        systemWriter.WriteRawBytes(payload);
+                        byte[] data = systemWriter.ToArray();
+
+                        foreach (var clientId in m_ConnectedClients)
+                        {
+                            if (clientId != connectionId)
+                            {
+                                m_Transport.SendToClient(clientId, data, data.Length, false); // Unreliable for voice
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Distribute to local speaker manager if it's not the local client
+            if (senderId != SteamUser.GetSteamID().m_SteamID)
+            {
+                FrizzVoiceManager.Instance?.ReceiveVoiceData(senderId, compressedData);
             }
         }
 

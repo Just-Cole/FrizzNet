@@ -91,7 +91,7 @@ private void OnReceiveMyMessage(ulong senderId, MessageReader reader)
 ### 3. Spawning & Object Sync
 To synchronize a GameObject across the network:
 1. Attach a [NetworkIdentity](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/NetworkIdentity.cs) to the prefab.
-2. Drag the prefab into the **Spawnable Prefabs** list on the `NetworkManager` component.
+2. Drag the prefab into the **Spawnable Prefabs** list on the `NetworkManager` component (or assign it to the `FrizzPlayerSpawner` which handles dynamic registration).
 3. Attach [FrizzNetworkTransform](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkTransform.cs) to sync position and rotation smoothly.
 
 **Spawning a prefab (Host only):**
@@ -104,6 +104,24 @@ GameObject myPlayer = NetworkManager.Instance.Spawn(playerPrefab, spawnPos, Quat
 ```csharp
 NetworkManager.Instance.Despawn(myPlayer);
 ```
+
+**Automated Player Spawning (`FrizzPlayerSpawner`):**
+For player characters, you can use the [FrizzPlayerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzPlayerSpawner.cs) component to automate player instantiation and zone placement:
+*   **Auto-Spawn**: Set `Auto Spawn` to true to automatically instantiate the player avatar when the Host starts the lobby or when clients connect.
+*   **Spawn Point Selection**: Cycles through your configured `Spawn Points` using `Random` or `RoundRobin` selection.
+*   **Collision Checking**: Enable `Avoid Occupied Spawn Points` to dynamically check for obstacles at spawn points before placing the character, falling back to other points if blocked.
+
+---
+
+### 4. Real-time Voice Chat (`FrizzVoiceManager`)
+FrizzNet supports out-of-the-box spatialized voice chat using the Steam Client's native audio recording settings.
+
+**Voice Chat Setup:**
+1. Attach the [FrizzVoiceManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzVoiceManager.cs) component to a persistent GameObject in your startup scene (e.g., the same GameObject as `NetworkManager`).
+2. Adjust settings like Push-to-Talk, PTT Key, volume levels, and spatial audio rolloff directly in the inspector or Editor Monitor tool.
+
+**Using Spatial Audio:**
+If `Spatial Audio` is checked, the voice stream for each player will automatically be positioned at their matching networked avatar's transform position in 3D space by tracking the `NetworkIdentity` owning that client ID.
 
 ---
 

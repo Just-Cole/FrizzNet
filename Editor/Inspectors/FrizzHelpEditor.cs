@@ -29,59 +29,87 @@ namespace FrizzNet.Editor.Inspectors
 
         private void DrawHelpBanner(string description, string docLink)
         {
-            GUILayout.Space(6);
-
-            // Styled box card
-            GUILayout.BeginVertical("box");
             GUILayout.Space(4);
 
-            // Title with neon green color
+            // Start a vertical layout with custom padding
+            Rect rect = EditorGUILayout.BeginVertical(new GUIStyle { padding = new RectOffset(12, 12, 8, 8) });
+            
+            // Draw a solid flat dark background card
+            EditorGUI.DrawRect(rect, new Color(0.16f, 0.16f, 0.17f));
+            
+            // Draw a left accent strip (Neon Green)
+            Rect accentRect = new Rect(rect.x, rect.y, 4f, rect.height);
+            EditorGUI.DrawRect(accentRect, new Color(0.22f, 1f, 0.08f));
+
+            // Header Row
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(6); // spacing from left accent strip
+            
             GUIStyle headerStyle = new GUIStyle(EditorStyles.boldLabel)
             {
-                fontSize = 11,
-                alignment = TextAnchor.MiddleLeft,
+                fontSize = 10,
                 richText = true
             };
             headerStyle.normal.textColor = new Color(0.22f, 1f, 0.08f); // Neon Green
-
+            
             GUILayout.Label("⚡ FRIZZNET COMPONENT GUIDE", headerStyle);
-            GUILayout.Space(4);
-
-            // Body text
-            GUIStyle descStyle = new GUIStyle(EditorStyles.label)
-            {
-                wordWrap = true,
-                fontSize = 11,
-                richText = true
-            };
-            descStyle.normal.textColor = new Color(0.85f, 0.85f, 0.87f); // Off-white
-
-            GUILayout.Label(description, descStyle);
-
-            // Documentation Link Button
+            
+            // Draw documentation link in the top-right corner to save space
             if (!string.IsNullOrEmpty(docLink))
             {
-                GUILayout.Space(6);
-                GUIStyle linkStyle = new GUIStyle(EditorStyles.miniButton)
+                GUILayout.FlexibleSpace();
+                GUIStyle linkStyle = new GUIStyle(EditorStyles.linkLabel)
                 {
-                    fontStyle = FontStyle.Bold,
-                    fixedWidth = 160f,
-                    fixedHeight = 20f
+                    fontSize = 10,
+                    alignment = TextAnchor.MiddleRight
                 };
-                
-                // Color button neon blue
-                Color oldBg = GUI.backgroundColor;
-                GUI.backgroundColor = new Color(0.2f, 0.6f, 1f);
-                if (GUILayout.Button("Read API Documentation ↗", linkStyle))
+                if (GUILayout.Button("Read Docs ↗", linkStyle))
                 {
-                    Application.OpenURL(docLink);
+                    OpenLocalDocumentation(docLink);
                 }
-                GUI.backgroundColor = oldBg;
             }
+            EditorGUILayout.EndHorizontal();
 
             GUILayout.Space(4);
-            GUILayout.EndVertical();
+
+            // Description body
+            EditorGUILayout.BeginHorizontal();
             GUILayout.Space(6);
+            
+            GUIStyle descStyle = new GUIStyle(EditorStyles.wordWrappedLabel)
+            {
+                fontSize = 11
+            };
+            descStyle.normal.textColor = new Color(0.85f, 0.85f, 0.87f); // Off-white
+            
+            GUILayout.Label(description, descStyle);
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
+            GUILayout.Space(8);
+        }
+
+        private void OpenLocalDocumentation(string filename)
+        {
+            string[] parts = filename.Split('#');
+            string baseFile = parts[0];
+            string hash = parts.Length > 1 ? "#" + parts[1] : "";
+
+            string filenameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(baseFile);
+            string[] guids = AssetDatabase.FindAssets(filenameWithoutExt);
+            
+            foreach (var guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.EndsWith(baseFile))
+                {
+                    string absPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", path));
+                    Application.OpenURL("file:///" + absPath.Replace("\\", "/") + hash);
+                    return;
+                }
+            }
+            
+            Debug.LogError($"[FrizzNet] Could not find documentation file: {baseFile}");
         }
     }
 
@@ -102,4 +130,12 @@ namespace FrizzNet.Editor.Inspectors
     [CustomEditor(typeof(FrizzNetworkTransform))]
     [CanEditMultipleObjects]
     public class FrizzNetworkTransformEditor : FrizzHelpEditorBase { }
+
+    [CustomEditor(typeof(FrizzVoiceManager))]
+    [CanEditMultipleObjects]
+    public class FrizzVoiceManagerEditor : FrizzHelpEditorBase { }
+
+    [CustomEditor(typeof(FrizzPlayerSpawner))]
+    [CanEditMultipleObjects]
+    public class FrizzPlayerSpawnerEditor : FrizzHelpEditorBase { }
 }

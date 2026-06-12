@@ -14,7 +14,7 @@ namespace FrizzNet.Steam
     /// Uses Steam Networking Sockets for connection-oriented P2P messaging.
     /// Handles Steam matchmaking lobby callback hooks.
     /// </summary>
-    [FrizzHelp("Steamworks.NET transport implementation using raw Steam Networking Sockets. Handles connections, callback queues, and data transmission.", "file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Documentation/SetupGuide.md")]
+    [FrizzHelp("Steamworks.NET transport implementation using raw Steam Networking Sockets. Handles connections, callback queues, and data transmission.", "index.html#SteamTransport")]
     public class SteamTransport : MonoBehaviour, INetworkTransport
     {
         public static SteamTransport Instance { get; private set; }

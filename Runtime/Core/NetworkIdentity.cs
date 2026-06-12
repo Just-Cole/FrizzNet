@@ -7,7 +7,7 @@ namespace FrizzNet.Core
     /// Manages network identity, owner authority, and player association.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Identifies this GameObject uniquely across the network. Tracks authority status, ownership credentials, and links players.", "file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Documentation/SetupGuide.md")]
+    [FrizzHelp("Identifies this GameObject uniquely across the network. Tracks authority status, ownership credentials, and links players.", "index.html#NetworkIdentity")]
     public class NetworkIdentity : MonoBehaviour
     {
         [Header("Network Identity")]

@@ -10,7 +10,9 @@ FrizzNet is a lightweight, Steam-first, connection-oriented networking framework
 *   **Steam Networking Sockets**: Highly reliable, low-latency connection-oriented P2P communication powered by Steam's virtual networking infrastructure.
 *   **Low-Overhead Packet Serialization**: Custom binary reading and writing via unmanaged memory with [MessageReader](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Messaging/MessageReader.cs) and [MessageWriter](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Messaging/MessageWriter.cs).
 *   **State & Transform Synchronization**: Synchronize positions and rotations unreliably over the network with smooth, jitter-free interpolation via [FrizzNetworkTransform](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkTransform.cs).
+*   **Automated Player Spawning**: Simplify instantiation and layout matching via [FrizzPlayerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzPlayerSpawner.cs) supporting random/round-robin and check-based spawn validation.
 *   **Host Migration**: Automatically handles Steam lobby owner changes, promoting client socket loops to hosts and routing connections seamlessly.
+*   **Integrated Voice Chat**: Built-in spatialized and push-to-talk voice communication utilizing Steam's native voice codecs with [FrizzVoiceManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzVoiceManager.cs).
 *   **Unity Editor Monitor Window**: Premium, custom Unity inspector dashboard (`Tools > FrizzNet`) for tracking active connections, lobby details, and network objects in real-time.
 
 ---
@@ -104,6 +106,21 @@ NetworkManager.Instance.Despawn(playerObj);
 
 Attach a [FrizzNetworkTransform](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkTransform.cs) component to automatically and smoothly interpolate position and rotation updates unreliably across the network.
 
+### 4. Voice Chat Integration (`FrizzVoiceManager`)
+
+FrizzNet has out-of-the-box support for spatialized voice chat using the Steam Client's microphone subsystem. Simply attach the [FrizzVoiceManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzVoiceManager.cs) component to a persistent GameObject in your scene and configure it:
+
+```csharp
+using FrizzNet.Core;
+
+// Configure Voice Chat settings via code (or directly in inspector)
+FrizzVoiceManager.Instance.EnableVoice = true;
+FrizzVoiceManager.Instance.UsePushToTalk = true;
+FrizzVoiceManager.Instance.PushToTalkKey = KeyCode.V;
+FrizzVoiceManager.Instance.SpatialAudio = true; // Enables 3D audio scaling
+FrizzVoiceManager.Instance.MaxAudioDistance = 50f;
+```
+
 ---
 
 ## 🎮 Included Samples
@@ -119,7 +136,7 @@ Check out the fully functional examples located in the `/Samples` directory:
 ```text
 FrizzNet/
 ├── Runtime/
-│   ├── Core/               <- NetworkManager, NetworkIdentity, FrizzNetworkTransform
+│   ├── Core/               <- NetworkManager, NetworkIdentity, FrizzNetworkTransform, FrizzPlayerSpawner
 │   ├── Steam/              <- SteamTransport, FrizzLobby matchmaking API
 │   ├── Messaging/          <- MessageReader, MessageWriter serialization
 │   ├── Logging/            <- FrizzLogger utility
