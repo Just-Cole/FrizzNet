@@ -125,6 +125,34 @@ If `Spatial Audio` is checked, the voice stream for each player will automatical
 
 ---
 
+### 5. Network Animation Sync (`FrizzNetworkAnimator`)
+Synchronize character animations smoothly across the network:
+1. Attach the [FrizzNetworkAnimator](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkAnimator.cs) component to any GameObject with a Unity `Animator` component.
+2. In the inspector, configure the `Send Rate` to adjust update frequency.
+3. For float, int, and bool parameters, the component automatically tracks changes from the authoritative client and synchronizes them to remote clients.
+4. For triggers, call `SetTrigger(...)` directly on the `FrizzNetworkAnimator` component (instead of the `Animator` component) to replicate trigger states instantly.
+
+```csharp
+// Example: Setting a trigger on the FrizzNetworkAnimator component
+[SerializeField] private FrizzNetworkAnimator m_NetworkAnimator;
+
+void PerformJump()
+{
+    // Sets the trigger locally and broadcasts it to all other clients
+    m_NetworkAnimator.SetTrigger("Jump");
+}
+```
+
+---
+
+### 6. Automated Server Spawning (`FrizzServerSpawner`)
+Automate the instantiation of static server-owned objects (NPCs, chests, doors, obstacles) on lobby initialization:
+1. Create a GameObject in your host scene and attach the [FrizzServerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerSpawner.cs) component.
+2. Add items to the `Spawn Items` list by providing the registered prefab and the target spawn location Transform.
+3. Keep `Spawn On Lobby Join` enabled to spawn the items automatically when the host lobby is created, or call `SpawnAll()` manually.
+
+---
+
 ## 🖥️ Editor Monitoring Tool
 FrizzNet includes a premium monitor window inside Unity to track network status in real-time.
 Access it via:

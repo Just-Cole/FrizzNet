@@ -32,6 +32,7 @@ namespace FrizzNet.Core
         private const short MSG_DESTROY = -11;
         private const short MSG_TRANSFORM = -12;
         private const short MSG_VOICE = -13;
+        private const short MSG_ANIMATION = -14;
 
         private INetworkTransport m_Transport;
         private readonly Dictionary<short, Action<ulong, MessageReader>> m_MessageHandlers = new Dictionary<short, Action<ulong, MessageReader>>();
@@ -201,6 +202,7 @@ namespace FrizzNet.Core
             RegisterHandler(MSG_DESTROY, HandleSystemDestroy);
             RegisterHandler(MSG_TRANSFORM, HandleSystemTransform);
             RegisterHandler(MSG_VOICE, HandleSystemVoice);
+            RegisterHandler(MSG_ANIMATION, HandleSystemAnimation);
         }
 
         #endregion
@@ -608,6 +610,56 @@ namespace FrizzNet.Core
             if (senderId != SteamUser.GetSteamID().m_SteamID)
             {
                 FrizzVoiceManager.Instance?.ReceiveVoiceData(senderId, compressedData);
+            }
+        }
+
+        private void HandleSystemAnimation(ulong connectionId, MessageReader reader)
+        {
+            ulong networkId = (ulong)reader.ReadLong();
+            int payloadSize = reader.ReadInt();
+            byte[] animationPayload = reader.ReadRawBytes(payloadSize);
+
+            // Replicate this animation update to other clients if we are the Host
+            if (IsHost)
+            {
+                using (MessageWriter writer = new MessageWriter())
+                {
+                    writer.WriteLong((long)networkId);
+                    writer.WriteInt(payloadSize);
+                    writer.WriteRawBytes(animationPayload);
+
+                    byte[] payload = writer.ToArray();
+                    using (MessageWriter systemWriter = new MessageWriter())
+                    {
+                        systemWriter.WriteShort(MSG_ANIMATION);
+                        systemWriter.WriteRawBytes(payload);
+                        byte[] data = systemWriter.ToArray();
+
+                        foreach (var clientId in m_ConnectedClients)
+                        {
+                            if (clientId != connectionId)
+                            {
+                                m_Transport.SendToClient(clientId, data, data.Length, true); // Reliable for animator updates
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Find local object and forward update
+            if (m_NetworkObjects.TryGetValue(networkId, out NetworkIdentity identity))
+            {
+                if (identity != null)
+                {
+                    // Owners do not apply network animation updates to avoid local prediction conflicts
+                    if (!IsHost && identity.HasAuthority) return;
+
+                    FrizzNetworkAnimator netAnimator = identity.GetComponent<FrizzNetworkAnimator>();
+                    if (netAnimator != null)
+                    {
+                        netAnimator.OnReceiveUpdate(animationPayload);
+                    }
+                }
             }
         }
 

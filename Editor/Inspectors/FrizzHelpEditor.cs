@@ -138,4 +138,12 @@ namespace FrizzNet.Editor.Inspectors
     [CustomEditor(typeof(FrizzPlayerSpawner))]
     [CanEditMultipleObjects]
     public class FrizzPlayerSpawnerEditor : FrizzHelpEditorBase { }
+
+    [CustomEditor(typeof(FrizzNetworkAnimator))]
+    [CanEditMultipleObjects]
+    public class FrizzNetworkAnimatorEditor : FrizzHelpEditorBase { }
+
+    [CustomEditor(typeof(FrizzServerSpawner))]
+    [CanEditMultipleObjects]
+    public class FrizzServerSpawnerEditor : FrizzHelpEditorBase { }
 }

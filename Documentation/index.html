@@ -56,6 +56,8 @@
                 <li><a href="#FrizzNetworkTransform" class="nav-link">FrizzNetworkTransform</a></li>
                 <li><a href="#FrizzVoiceManager" class="nav-link">FrizzVoiceManager</a></li>
                 <li><a href="#FrizzPlayerSpawner" class="nav-link">FrizzPlayerSpawner</a></li>
+                <li><a href="#FrizzNetworkAnimator" class="nav-link">FrizzNetworkAnimator</a></li>
+                <li><a href="#FrizzServerSpawner" class="nav-link">FrizzServerSpawner</a></li>
             </ul>
         </div>
 
@@ -421,6 +423,95 @@ public class CustomGameManager : MonoBehaviour
         }
     }
 }</code></pre>
+                </div>
+            </div>
+
+            <!-- TAB: FrizzNetworkAnimator -->
+            <div id="FrizzNetworkAnimator" class="tab-content">
+                <span class="badge">API Reference</span>
+                <h1>FrizzNetworkAnimator</h1>
+                <p class="lead">Synchronizes Unity Animator variables (floats, ints, bools) and trigger states smoothly across all connected clients. Caches parameters for minimal latency overhead.</p>
+
+                <div class="card">
+                    <div class="card-title">Tuning Properties</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Field Name</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>TargetAnimator</code></td>
+                                <td><code>None (Animator)</code></td>
+                                <td>The Animator component to synchronize. If unassigned, automatically queries the local GameObject.</td>
+                            </tr>
+                            <tr>
+                                <td><code>SendRate</code></td>
+                                <td><code>20</code> updates/sec</td>
+                                <td>Frequency of variable polling and network updates sent by the authoritative client.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">💻 Code Example: Triggers synchronization</div>
+                    <pre><code>// Instead of triggering directly on Unity's Animator, call SetTrigger on FrizzNetworkAnimator
+public class PlayerAnimationController : MonoBehaviour
+{
+    [SerializeField] private FrizzNetworkAnimator m_NetAnimator;
+
+    void Update()
+    {
+        if (!GetComponent&lt;NetworkIdentity&gt;().HasAuthority) return;
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            // This will set the trigger locally and synchronize it instantly over the P2P network
+            m_NetAnimator.SetTrigger("Jump");
+        }
+    }
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- TAB: FrizzServerSpawner -->
+            <div id="FrizzServerSpawner" class="tab-content">
+                <span class="badge">API Reference</span>
+                <h1>FrizzServerSpawner</h1>
+                <p class="lead">Automates the instantiation and registration of server-owned networked GameObjects (such as NPCs, obstacles, or interactable items) when the lobby is established.</p>
+
+                <div class="card">
+                    <div class="card-title">Tuning Properties</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Field Name</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>SpawnItems</code></td>
+                                <td><code>Empty List</code></td>
+                                <td>List of prefabs (with <code>NetworkIdentity</code>) and their target spawn locations.</td>
+                            </tr>
+                            <tr>
+                                <td><code>SpawnOnLobbyJoin</code></td>
+                                <td><code>true</code></td>
+                                <td>Automatically triggers spawning of registered items when joining the lobby as Host.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert">
+                    <div class="alert-title">Server Authority</div>
+                    <p>All items spawned via <code>FrizzServerSpawner</code> are instantiated as server-owned objects (OwnerConnectionId = 0). These items persist across client sessions as long as the host maintains the lobby connection.</p>
                 </div>
             </div>
 

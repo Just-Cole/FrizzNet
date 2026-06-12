@@ -10,7 +10,9 @@ FrizzNet is a lightweight, Steam-first, connection-oriented networking framework
 *   **Steam Networking Sockets**: Highly reliable, low-latency connection-oriented P2P communication powered by Steam's virtual networking infrastructure.
 *   **Low-Overhead Packet Serialization**: Custom binary reading and writing via unmanaged memory with [MessageReader](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Messaging/MessageReader.cs) and [MessageWriter](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Messaging/MessageWriter.cs).
 *   **State & Transform Synchronization**: Synchronize positions and rotations unreliably over the network with smooth, jitter-free interpolation via [FrizzNetworkTransform](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkTransform.cs).
+*   **Animator State Replication**: Synchronize Unity animations, states, and parameters seamlessly across remote clients using [FrizzNetworkAnimator](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkAnimator.cs).
 *   **Automated Player Spawning**: Simplify instantiation and layout matching via [FrizzPlayerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzPlayerSpawner.cs) supporting random/round-robin and check-based spawn validation.
+*   **Server Entity Spawning**: Instantiate host-owned static world objects, NPCs, or interactive prefabs automatically using [FrizzServerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerSpawner.cs).
 *   **Host Migration**: Automatically handles Steam lobby owner changes, promoting client socket loops to hosts and routing connections seamlessly.
 *   **Integrated Voice Chat**: Built-in spatialized and push-to-talk voice communication utilizing Steam's native voice codecs with [FrizzVoiceManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzVoiceManager.cs).
 *   **Unity Editor Monitor Window**: Premium, custom Unity inspector dashboard (`Tools > FrizzNet`) for tracking active connections, lobby details, and network objects in real-time.
@@ -121,6 +123,34 @@ FrizzVoiceManager.Instance.SpatialAudio = true; // Enables 3D audio scaling
 FrizzVoiceManager.Instance.MaxAudioDistance = 50f;
 ```
 
+### 5. Network Animation Sync (`FrizzNetworkAnimator`)
+
+To synchronize animations, attach a [FrizzNetworkAnimator](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkAnimator.cs) component to the GameObject containing your `Animator` component. All float, int, and bool parameters are automatically tracked. For triggers, use the component's `SetTrigger` method:
+
+```csharp
+using FrizzNet.Core;
+
+// Trigger animation across the P2P network:
+FrizzNetworkAnimator netAnimator = GetComponent<FrizzNetworkAnimator>();
+netAnimator.SetTrigger("Jump");
+```
+
+### 6. Automated Server Spawning (`FrizzServerSpawner`)
+
+Attach the [FrizzServerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerSpawner.cs) component to a manager GameObject on the Host to automatically spawn server-owned lobby entities (such as NPCs, chests, or obstacles) at designated locations:
+
+```csharp
+using FrizzNet.Core;
+
+// Spawner executes automatically on lobby entry for the Host, 
+// or can be triggered manually:
+FrizzServerSpawner spawner = GetComponent<FrizzServerSpawner>();
+if (NetworkManager.Instance.IsHost && !spawner.HasSpawned)
+{
+    spawner.SpawnAll();
+}
+```
+
 ---
 
 ## 🎮 Included Samples
@@ -136,7 +166,7 @@ Check out the fully functional examples located in the `/Samples` directory:
 ```text
 FrizzNet/
 ├── Runtime/
-│   ├── Core/               <- NetworkManager, NetworkIdentity, FrizzNetworkTransform, FrizzPlayerSpawner
+│   ├── Core/               <- NetworkManager, NetworkIdentity, FrizzNetworkTransform, FrizzPlayerSpawner, FrizzNetworkAnimator, FrizzServerSpawner
 │   ├── Steam/              <- SteamTransport, FrizzLobby matchmaking API
 │   ├── Messaging/          <- MessageReader, MessageWriter serialization
 │   ├── Logging/            <- FrizzLogger utility
