@@ -41,23 +41,36 @@
     <div class="layout">
         <!-- Sidebar Navigation -->
         <div class="sidebar">
-            <div class="brand">⚡ FrizzNet</div>
+            <div class="brand">FrizzNet</div>
             
-            <div class="nav-group-title">Getting Started</div>
+            <div class="nav-group-title">Core Integration</div>
             <ul class="nav-list">
-                <li><a href="#SetupGuide" class="nav-link">Setup & Architecture</a></li>
+                <li><a href="#SetupGuide" class="nav-link nav-core">Setup & Architecture</a></li>
+                <li><a href="#NetworkIdentity" class="nav-link nav-core">NetworkIdentity</a></li>
+            </ul>
+
+            <div class="nav-group-title">Transports</div>
+            <ul class="nav-list">
+                <li><a href="#SteamTransport" class="nav-link nav-transport">SteamTransport</a></li>
             </ul>
             
-            <div class="nav-group-title">Components API</div>
+            <div class="nav-group-title">Managers</div>
             <ul class="nav-list">
-                <li><a href="#NetworkManager" class="nav-link">NetworkManager</a></li>
-                <li><a href="#SteamTransport" class="nav-link">SteamTransport</a></li>
-                <li><a href="#NetworkIdentity" class="nav-link">NetworkIdentity</a></li>
-                <li><a href="#FrizzNetworkTransform" class="nav-link">FrizzNetworkTransform</a></li>
-                <li><a href="#FrizzVoiceManager" class="nav-link">FrizzVoiceManager</a></li>
-                <li><a href="#FrizzPlayerSpawner" class="nav-link">FrizzPlayerSpawner</a></li>
-                <li><a href="#FrizzNetworkAnimator" class="nav-link">FrizzNetworkAnimator</a></li>
-                <li><a href="#FrizzServerSpawner" class="nav-link">FrizzServerSpawner</a></li>
+                <li><a href="#NetworkManager" class="nav-link nav-manager">NetworkManager</a></li>
+                <li><a href="#FrizzServerManager" class="nav-link nav-manager">FrizzServerManager</a></li>
+                <li><a href="#FrizzVoiceManager" class="nav-link nav-manager">FrizzVoiceManager</a></li>
+            </ul>
+
+            <div class="nav-group-title">Synchronizers</div>
+            <ul class="nav-list">
+                <li><a href="#FrizzNetworkTransform" class="nav-link nav-sync">FrizzNetworkTransform</a></li>
+                <li><a href="#FrizzNetworkAnimator" class="nav-link nav-sync">FrizzNetworkAnimator</a></li>
+            </ul>
+
+            <div class="nav-group-title">Spawners</div>
+            <ul class="nav-list">
+                <li><a href="#FrizzPlayerSpawner" class="nav-link nav-spawner">FrizzPlayerSpawner</a></li>
+                <li><a href="#FrizzServerSpawner" class="nav-link nav-spawner">FrizzServerSpawner</a></li>
             </ul>
         </div>
 
@@ -137,6 +150,41 @@
                                 <td><code>Despawn(obj)</code></td>
                                 <td>void</td>
                                 <td>Destroys a networked GameObject across all clients (Host only).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Inspector Configurations</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option / Variable</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Dont Destroy On Load</code></td>
+                                <td><code>true</code></td>
+                                <td>If enabled, persists the NetworkManager GameObject across scene loads.</td>
+                            </tr>
+                            <tr>
+                                <td><code>Run In Background</code></td>
+                                <td><code>true</code></td>
+                                <td>Keeps the game execution running when the application window loses focus. Crucial for local multi-client testing.</td>
+                            </tr>
+                            <tr>
+                                <td><code>Max Players</code></td>
+                                <td><code>4</code></td>
+                                <td>The default player slot limit set when creating Steam matchmaking lobbies.</td>
+                            </tr>
+                            <tr>
+                                <td><code>Log Level</code></td>
+                                <td><code>FrizzLogLevel.Info</code></td>
+                                <td>Filters framework console logging outputs (None, Errors, Warnings, Info, Verbose).</td>
                             </tr>
                         </tbody>
                     </table>
@@ -512,6 +560,91 @@ public class PlayerAnimationController : MonoBehaviour
                 <div class="alert">
                     <div class="alert-title">Server Authority</div>
                     <p>All items spawned via <code>FrizzServerSpawner</code> are instantiated as server-owned objects (OwnerConnectionId = 0). These items persist across client sessions as long as the host maintains the lobby connection.</p>
+                </div>
+            </div>
+
+            <!-- TAB: FrizzServerManager -->
+            <div id="FrizzServerManager" class="tab-content">
+                <span class="badge">API Reference</span>
+                <h1>FrizzServerManager</h1>
+                <p class="lead">Manages hosting parameters, lobby types, matchmaking names, passwords, and authoritative client player kicking.</p>
+
+                <div class="card">
+                    <div class="card-title">Properties & Methods</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method / Variable</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Instance</code></td>
+                                <td>Static Getter</td>
+                                <td>Retrieves the active FrizzServerManager singleton instance.</td>
+                            </tr>
+                            <tr>
+                                <td><code>MaxPlayers</code></td>
+                                <td>int</td>
+                                <td>The maximum connection capacity limit for Steam matchmaking lobbies (2-64).</td>
+                            </tr>
+                            <tr>
+                                <td><code>LobbyType</code></td>
+                                <td>ELobbyType</td>
+                                <td>Accessibility of the Steam matchmaking lobby (Public, FriendsOnly, Private).</td>
+                            </tr>
+                            <tr>
+                                <td><code>LobbyName</code></td>
+                                <td>string</td>
+                                <td>Public display name assigned to the lobby metadata.</td>
+                            </tr>
+                            <tr>
+                                <td><code>LobbyPassword</code></td>
+                                <td>string</td>
+                                <td>Optional passcode required to connect to the session.</td>
+                            </tr>
+                            <tr>
+                                <td><code>StartServer()</code></td>
+                                <td>void</td>
+                                <td>Authoritatively starts hosting a new session and requests lobby creation.</td>
+                            </tr>
+                            <tr>
+                                <td><code>StopServer()</code></td>
+                                <td>void</td>
+                                <td>Tears down the hosting socket and leaves the Steam lobby.</td>
+                            </tr>
+                            <tr>
+                                <td><code>KickPlayer(steamId)</code></td>
+                                <td>bool</td>
+                                <td>Authoritatively disconnects a client connection (Host only). Returns true if successful.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">💻 Code Example: Session Control</div>
+                    <pre><code>// Starting a server dynamically with custom parameters
+public void HostCustomMatch()
+{
+    FrizzServerManager.Instance.LobbyName = "Epic Battle Arena";
+    FrizzServerManager.Instance.MaxPlayers = 8;
+    FrizzServerManager.Instance.LobbyType = Steamworks.ELobbyType.k_ELobbyTypePublic;
+    FrizzServerManager.Instance.LobbyPassword = "123"; // Optional passcode
+    
+    FrizzServerManager.Instance.StartServer();
+}
+
+// Authoritative player kick routine
+public void KickObnoxiousPlayer(ulong offenderSteamId)
+{
+    if (FrizzServerManager.Instance.KickPlayer(offenderSteamId))
+    {
+        Debug.Log($"Successfully kicked client: {offenderSteamId}");
+    }
+}</code></pre>
                 </div>
             </div>
 

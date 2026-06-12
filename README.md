@@ -13,6 +13,7 @@ FrizzNet is a lightweight, Steam-first, connection-oriented networking framework
 *   **Animator State Replication**: Synchronize Unity animations, states, and parameters seamlessly across remote clients using [FrizzNetworkAnimator](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzNetworkAnimator.cs).
 *   **Automated Player Spawning**: Simplify instantiation and layout matching via [FrizzPlayerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzPlayerSpawner.cs) supporting random/round-robin and check-based spawn validation.
 *   **Server Entity Spawning**: Instantiate host-owned static world objects, NPCs, or interactive prefabs automatically using [FrizzServerSpawner](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerSpawner.cs).
+*   **Server/Session Management**: Manage player slots, lobby accessibility, lobby names, passwords, and authoritative player kicking via [FrizzServerManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerManager.cs).
 *   **Host Migration**: Automatically handles Steam lobby owner changes, promoting client socket loops to hosts and routing connections seamlessly.
 *   **Integrated Voice Chat**: Built-in spatialized and push-to-talk voice communication utilizing Steam's native voice codecs with [FrizzVoiceManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzVoiceManager.cs).
 *   **Unity Editor Monitor Window**: Premium, custom Unity inspector dashboard (`Tools > FrizzNet`) for tracking active connections, lobby details, and network objects in real-time.
@@ -151,6 +152,26 @@ if (NetworkManager.Instance.IsHost && !spawner.HasSpawned)
 }
 ```
 
+### 7. Server/Session Management (`FrizzServerManager`)
+
+Attach the [FrizzServerManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerManager.cs) component to your manager GameObject to configure matchmaking parameters and authoritatively manage the session:
+
+```csharp
+using FrizzNet.Core;
+
+// Configure session properties
+FrizzServerManager.Instance.LobbyName = "FrizzNet High-Stakes Arena";
+FrizzServerManager.Instance.MaxPlayers = 8;
+FrizzServerManager.Instance.LobbyType = Steamworks.ELobbyType.k_ELobbyTypePublic;
+FrizzServerManager.Instance.LobbyPassword = "secret_passcode";
+
+// Start the server and create matchmaking lobby
+FrizzServerManager.Instance.StartServer();
+
+// Authoritatively kick a client (Host only)
+FrizzServerManager.Instance.KickPlayer(offendingClientSteamId);
+```
+
 ---
 
 ## 🎮 Included Samples
@@ -166,7 +187,7 @@ Check out the fully functional examples located in the `/Samples` directory:
 ```text
 FrizzNet/
 ├── Runtime/
-│   ├── Core/               <- NetworkManager, NetworkIdentity, FrizzNetworkTransform, FrizzPlayerSpawner, FrizzNetworkAnimator, FrizzServerSpawner
+│   ├── Core/               <- NetworkManager, NetworkIdentity, FrizzNetworkTransform, FrizzPlayerSpawner, FrizzNetworkAnimator, FrizzServerSpawner, FrizzServerManager
 │   ├── Steam/              <- SteamTransport, FrizzLobby matchmaking API
 │   ├── Messaging/          <- MessageReader, MessageWriter serialization
 │   ├── Logging/            <- FrizzLogger utility

@@ -118,6 +118,13 @@ namespace FrizzNet.Transport
         bool SendToClient(ulong connectionId, byte[] data, int size, bool reliable = true);
 
         /// <summary>
+        /// Authoritatively disconnects a specific client connection (Host/Server only).
+        /// </summary>
+        /// <param name="connectionId">Target client connection ID.</param>
+        /// <returns>True if the client was found and disconnected successfully.</returns>
+        bool DisconnectClient(ulong connectionId);
+
+        /// <summary>
         /// Manually polls transport-specific events, callbacks, and incoming messages.
         /// Should be called on update/tick loops.
         /// </summary>

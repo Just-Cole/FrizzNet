@@ -241,6 +241,37 @@ namespace FrizzNet.Steam
             return false;
         }
 
+        public bool DisconnectClient(ulong connectionId)
+        {
+            if (!IsHost)
+            {
+                FrizzLogger.LogWarning("Cannot disconnect client: Not hosting.");
+                return false;
+            }
+
+            if (m_SteamIdToConnection.TryGetValue(connectionId, out HSteamNetConnection hConn))
+            {
+                FrizzLogger.LogNetwork($"Disconnecting client {connectionId} (Kicked by Host)...");
+                bool success = SteamNetworkingSockets.CloseConnection(hConn, 0, "Kicked by Host", false);
+                if (success)
+                {
+                    // Clean up immediately to ensure local state is consistent
+                    m_SteamIdToConnection.Remove(connectionId);
+                    m_ConnectionToSteamId.Remove(hConn);
+
+                    OnClientDisconnected?.Invoke(new TransportConnection
+                    {
+                        ConnectionId = connectionId,
+                        Address = connectionId.ToString()
+                    });
+                }
+                return success;
+            }
+
+            FrizzLogger.LogWarning($"DisconnectClient failed: Connection ID {connectionId} not found.");
+            return false;
+        }
+
         public void PollEvents()
         {
             if (!SteamManager.Initialized) return;

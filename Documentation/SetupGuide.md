@@ -153,6 +153,34 @@ Automate the instantiation of static server-owned objects (NPCs, chests, doors, 
 
 ---
 
+### 7. Session & Server Management (`FrizzServerManager`)
+Manage matchmaking sessions, lobby configurations, and enforce authority constraints like kicking clients:
+1. Attach the [FrizzServerManager](file:///c:/Users/tyjus/Documents/UnityGames/Editortools/Assets/FrizzNet/Runtime/Core/FrizzServerManager.cs) component to a persistent GameObject in your starting scene.
+2. In the inspector, configure parameters like **Max Players**, **Lobby Type** (Public, FriendsOnly, Private), **Lobby Name**, and **Lobby Password**.
+3. Call `StartServer()` to launch hosting and matchmaking lobby creation, and `StopServer()` to shut it down.
+4. Authoritatively kick players from the server using `KickPlayer(steamId)`.
+
+```csharp
+// Example: Setting lobby name and starting host
+void HostGame()
+{
+    FrizzServerManager.Instance.LobbyName = "FrizzNet Match";
+    FrizzServerManager.Instance.MaxPlayers = 8;
+    FrizzServerManager.Instance.StartServer();
+}
+
+// Example: Kicking a player
+void KickPlayerById(ulong steamId)
+{
+    if (NetworkManager.Instance.IsHost)
+    {
+        FrizzServerManager.Instance.KickPlayer(steamId);
+    }
+}
+```
+
+---
+
 ## 🖥️ Editor Monitoring Tool
 FrizzNet includes a premium monitor window inside Unity to track network status in real-time.
 Access it via:

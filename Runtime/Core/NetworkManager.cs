@@ -27,6 +27,16 @@ namespace FrizzNet.Core
         [Tooltip("List of prefabs that can be dynamically spawned over the network.")]
         [SerializeField] private List<NetworkIdentity> m_SpawnablePrefabs = new List<NetworkIdentity>();
 
+        [Header("Network Options")]
+        [Tooltip("If true, ensures the GameObject is not destroyed when loading a new Scene.")]
+        [SerializeField] private bool m_DontDestroyOnLoad = true;
+
+        [Tooltip("If true, keeps the application running when window loses focus (crucial for local testing).")]
+        [SerializeField] private bool m_RunInBackground = true;
+
+        [Tooltip("Filters framework log output severity printed to the Unity console.")]
+        [SerializeField] private FrizzLogLevel m_LogLevel = FrizzLogLevel.Info;
+
         // System Reserved Messages (negative values to avoid developer overlap)
         private const short MSG_SPAWN = -10;
         private const short MSG_DESTROY = -11;
@@ -52,6 +62,11 @@ namespace FrizzNet.Core
         public IReadOnlyCollection<ulong> ConnectedClients => m_ConnectedClients;
         public IReadOnlyDictionary<ulong, NetworkIdentity> NetworkObjects => m_NetworkObjects;
 
+        // Network Options properties
+        public bool DontDestroyOnLoadOnAwake { get => m_DontDestroyOnLoad; set => m_DontDestroyOnLoad = value; }
+        public bool RunInBackground { get => m_RunInBackground; set { m_RunInBackground = value; Application.runInBackground = value; } }
+        public FrizzLogLevel LogLevel { get => m_LogLevel; set { m_LogLevel = value; FrizzLogger.CurrentLogLevel = value; } }
+
         // Public Developer Events
         public static event Action OnConnected;
         public static event Action OnDisconnected;
@@ -69,7 +84,18 @@ namespace FrizzNet.Core
                 return;
             }
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            
+            if (m_DontDestroyOnLoad)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+
+            if (m_RunInBackground)
+            {
+                Application.runInBackground = true;
+            }
+
+            FrizzLogger.CurrentLogLevel = m_LogLevel;
 
             InitializeTransport();
             BuildPrefabRegistry();

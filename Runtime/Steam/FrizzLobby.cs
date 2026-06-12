@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Steamworks;
 using FrizzNet.Logging;
+using FrizzNet.Core;
 
 namespace FrizzNet.Steam
 {
@@ -37,9 +38,9 @@ namespace FrizzNet.Steam
         /// <summary>
         /// Creates a new Steam lobby.
         /// </summary>
-        /// <param name="maxPlayers">Maximum lobby size.</param>
+        /// <param name="maxPlayers">Maximum lobby size. If -1, defaults to NetworkManager config.</param>
         /// <param name="lobbyType">Type of lobby (Public, FriendsOnly, Private).</param>
-        public static void Create(int maxPlayers = 4, ELobbyType lobbyType = ELobbyType.k_ELobbyTypePublic)
+        public static void Create(int maxPlayers = -1, ELobbyType lobbyType = ELobbyType.k_ELobbyTypePublic)
         {
             if (!SteamManager.Initialized)
             {
@@ -47,8 +48,14 @@ namespace FrizzNet.Steam
                 return;
             }
 
-            FrizzLogger.LogNetwork($"Requesting Steam to create lobby of type {lobbyType} with {maxPlayers} max players...");
-            SteamMatchmaking.CreateLobby(lobbyType, maxPlayers);
+            int finalMaxPlayers = maxPlayers;
+            if (finalMaxPlayers <= 0)
+            {
+                finalMaxPlayers = FrizzServerManager.Instance != null ? FrizzServerManager.Instance.MaxPlayers : 4;
+            }
+
+            FrizzLogger.LogNetwork($"Requesting Steam to create lobby of type {lobbyType} with {finalMaxPlayers} max players...");
+            SteamMatchmaking.CreateLobby(lobbyType, finalMaxPlayers);
         }
 
         /// <summary>
