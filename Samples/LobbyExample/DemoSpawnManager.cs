@@ -3,6 +3,7 @@ using Steamworks;
 using FrizzNet.Core;
 using FrizzNet.Steam;
 using FrizzNet.Logging;
+using FrizzNet.Messaging;
 
 namespace FrizzNet.Samples
 {
@@ -14,18 +15,49 @@ namespace FrizzNet.Samples
     [FrizzHelp("Handles dynamic player spawning, scene geometry setup, and resource cube spawning for the grow-and-eat demo game.")]
     public class DemoSpawnManager : MonoBehaviour
     {
-        private GameObject m_GeneratedPrefab;
-        private GameObject m_ResourcePrefab;
+        [Header("Prefabs")]
+        [Tooltip("Assign custom Player Prefab. If empty, a default cube template is generated procedurally.")]
+        [SerializeField] private GameObject m_PlayerPrefab;
+
+        [Tooltip("Assign custom Resource Prefab. If empty, a default sphere template is generated procedurally.")]
+        [SerializeField] private GameObject m_ResourcePrefab;
+
+        private GameObject m_ActivePlayerPrefab;
+        private GameObject m_ActiveResourcePrefab;
+
+        [Header("Scene Configuration")]
+        [Tooltip("Name of the lobby scene to return to on disconnect.")]
+        [SerializeField] private string m_LobbySceneName = "DemoLobbyScene";
 
         [Header("Spawn Settings")]
         [SerializeField] private Vector3 m_SpawnAreaMin = new Vector3(-8f, 0.5f, -8f);
         [SerializeField] private Vector3 m_SpawnAreaMax = new Vector3(8f, 0.5f, 8f);
 
+        private const short MSG_SCENE_READY = 5000;
+
         private void Awake()
         {
             CreateSceneGeometry();
-            CreatePlayerPrefabTemplate();
-            CreateResourcePrefabTemplate();
+
+            // Set up Player Prefab
+            if (m_PlayerPrefab != null)
+            {
+                m_ActivePlayerPrefab = m_PlayerPrefab;
+            }
+            else
+            {
+                CreatePlayerPrefabTemplate();
+            }
+
+            // Set up Resource Prefab
+            if (m_ResourcePrefab != null)
+            {
+                m_ActiveResourcePrefab = m_ResourcePrefab;
+            }
+            else
+            {
+                CreateResourcePrefabTemplate();
+            }
         }
 
         private void Start()
@@ -33,25 +65,50 @@ namespace FrizzNet.Samples
             // Register player and resource prefabs on the NetworkManager registry
             if (NetworkManager.Instance != null)
             {
-                if (m_GeneratedPrefab != null)
+                if (m_ActivePlayerPrefab != null)
                 {
-                    NetworkManager.Instance.RegisterSpawnablePrefab(m_GeneratedPrefab.GetComponent<NetworkIdentity>());
+                    NetworkManager.Instance.RegisterSpawnablePrefab(m_ActivePlayerPrefab.GetComponent<NetworkIdentity>());
                 }
-                if (m_ResourcePrefab != null)
+                if (m_ActiveResourcePrefab != null)
                 {
-                    NetworkManager.Instance.RegisterSpawnablePrefab(m_ResourcePrefab.GetComponent<NetworkIdentity>());
+                    NetworkManager.Instance.RegisterSpawnablePrefab(m_ActiveResourcePrefab.GetComponent<NetworkIdentity>());
                 }
             }
 
-            // Subscribe to multiplayer connection events
-            NetworkManager.OnClientConnected += HandleClientConnected;
-            FrizzLobby.OnLobbyJoinedEvent += HandleLobbyJoined;
+            // Subscribe to network disconnection and lobby left events
+            NetworkManager.OnDisconnected += HandleDisconnected;
+            FrizzLobby.OnLobbyLeftEvent += HandleLobbyLeft;
+
+            // Spawn host or clients depending on local connection role
+            if (FrizzLobby.InLobby)
+            {
+                CSteamID owner = FrizzLobby.GetOwner();
+                if (owner == SteamUser.GetSteamID())
+                {
+                    // If we are Host, register client readiness handler and spawn ourselves
+                    if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
+                    {
+                        NetworkManager.Instance.RegisterHandler(MSG_SCENE_READY, HandleClientSceneReady);
+                        SpawnHostPlayer();
+                    }
+                }
+                else
+                {
+                    // If we are Client, tell Host we are loaded and ready
+                    SendSceneReadyMessage();
+                }
+            }
         }
 
         private void OnDestroy()
         {
-            NetworkManager.OnClientConnected -= HandleClientConnected;
-            FrizzLobby.OnLobbyJoinedEvent -= HandleLobbyJoined;
+            NetworkManager.OnDisconnected -= HandleDisconnected;
+            FrizzLobby.OnLobbyLeftEvent -= HandleLobbyLeft;
+
+            if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
+            {
+                NetworkManager.Instance.UnregisterHandler(MSG_SCENE_READY);
+            }
         }
 
         private void CreateSceneGeometry()
@@ -110,7 +167,7 @@ namespace FrizzNet.Samples
             template.transform.position = new Vector3(0f, -100f, 0f);
             template.SetActive(false);
 
-            m_GeneratedPrefab = template;
+            m_ActivePlayerPrefab = template;
         }
 
         private void CreateResourcePrefabTemplate()
@@ -141,7 +198,7 @@ namespace FrizzNet.Samples
             template.transform.position = new Vector3(0f, -100f, 0f);
             template.SetActive(false);
 
-            m_ResourcePrefab = template;
+            m_ActiveResourcePrefab = template;
         }
 
         public Vector3 GetRandomSpawnPosition()
@@ -168,7 +225,7 @@ namespace FrizzNet.Samples
         public void SpawnResource()
         {
             if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost) return;
-            if (m_ResourcePrefab == null) return;
+            if (m_ActiveResourcePrefab == null) return;
 
             Vector3 spawnPos = Vector3.zero;
             bool foundClearSpot = false;
@@ -214,18 +271,39 @@ namespace FrizzNet.Samples
                 );
             }
 
-            NetworkManager.Instance.Spawn(m_ResourcePrefab, spawnPos, Quaternion.identity);
+            NetworkManager.Instance.Spawn(m_ActiveResourcePrefab, spawnPos, Quaternion.identity);
         }
 
-        private void HandleLobbyJoined(CSteamID lobbyId)
+        private void HandleDisconnected()
         {
-            // Clients do not spawn themselves. The host handles it upon connection.
-            // But if we are the host (e.g. lobby owner after migration), we spawn.
-            CSteamID owner = FrizzLobby.GetOwner();
-            if (owner == SteamUser.GetSteamID())
+            FrizzLogger.LogNetwork("[Game] Client disconnected from server. Returning to Lobby scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(m_LobbySceneName);
+        }
+
+        private void HandleLobbyLeft()
+        {
+            FrizzLogger.LogNetwork("[Game] Left lobby. Returning to Lobby scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(m_LobbySceneName);
+        }
+
+        private void SendSceneReadyMessage()
+        {
+            if (NetworkManager.Instance != null && NetworkManager.Instance.IsClient)
             {
-                Invoke(nameof(SpawnHostPlayer), 0.5f);
+                using (MessageWriter writer = new MessageWriter())
+                {
+                    writer.WriteLong((long)SteamUser.GetSteamID().m_SteamID);
+                    NetworkManager.Instance.SendToServer(MSG_SCENE_READY, writer, true);
+                }
+                FrizzLogger.LogNetwork("[Game] Sent MSG_SCENE_READY to Host.");
             }
+        }
+
+        private void HandleClientSceneReady(ulong connectionId, MessageReader reader)
+        {
+            ulong clientSteamId = (ulong)reader.ReadLong();
+            FrizzLogger.LogNetwork($"[Game] Host received MSG_SCENE_READY from Client {clientSteamId}. Spawning player...");
+            SpawnPlayerForId(clientSteamId);
         }
 
         private void SpawnHostPlayer()
@@ -238,22 +316,13 @@ namespace FrizzNet.Samples
             }
         }
 
-        private void HandleClientConnected(ulong clientId)
-        {
-            // Host spawns a character for the newly joined client
-            if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
-            {
-                SpawnPlayerForId(clientId);
-            }
-        }
-
         private void SpawnPlayerForId(ulong steamId)
         {
             // Random position inside spawn bounds
             Vector3 spawnPos = GetRandomSpawnPosition();
 
             FrizzLogger.LogNetwork($"SpawnManager spawning player character for SteamID {steamId} at {spawnPos}");
-            NetworkManager.Instance.Spawn(m_GeneratedPrefab, spawnPos, Quaternion.identity, steamId);
+            NetworkManager.Instance.Spawn(m_ActivePlayerPrefab, spawnPos, Quaternion.identity, steamId);
         }
     }
 }
