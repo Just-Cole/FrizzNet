@@ -11,7 +11,7 @@ namespace FrizzNet.Core
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [FrizzHelp("Synchronizes Unity Animator state, parameters, and triggers smoothly across all network clients.", "index.html#FrizzNetworkAnimator")]
-    public class FrizzNetworkAnimator : MonoBehaviour
+    public class FrizzNetworkAnimator : NetworkBehaviour
     {
         private struct TrackedParameter
         {
@@ -29,7 +29,6 @@ namespace FrizzNet.Core
         [Range(1, 60)]
         [SerializeField] private int m_SendRate = 20;
 
-        private NetworkIdentity m_Identity;
         private readonly List<TrackedParameter> m_TrackedParameters = new List<TrackedParameter>();
         private float m_SendInterval;
         private float m_LastSendTime;
@@ -42,7 +41,6 @@ namespace FrizzNet.Core
 
         private void Awake()
         {
-            m_Identity = GetComponent<NetworkIdentity>();
             if (m_Animator == null)
             {
                 m_Animator = GetComponent<Animator>();
@@ -91,10 +89,10 @@ namespace FrizzNet.Core
 
         private void Update()
         {
-            if (m_Animator == null || m_Identity == null) return;
-
+            if (m_Animator == null || NetworkId == 0) return;
+ 
             // Only the owner with network authority checks and dispatches parameter updates
-            if (m_Identity.HasAuthority && Time.time - m_LastSendTime >= m_SendInterval)
+            if (HasAuthority && Time.time - m_LastSendTime >= m_SendInterval)
             {
                 SendParameterUpdates();
                 m_LastSendTime = Time.time;
@@ -182,7 +180,7 @@ namespace FrizzNet.Core
 
                     using (MessageWriter systemWriter = new MessageWriter())
                     {
-                        systemWriter.WriteLong((long)m_Identity.NetworkId);
+                        systemWriter.WriteLong((long)NetworkId);
                         systemWriter.WriteInt(payloadBytes.Length);
                         systemWriter.WriteRawBytes(payloadBytes);
 
@@ -215,8 +213,8 @@ namespace FrizzNet.Core
             if (m_Animator == null) return;
             m_Animator.SetTrigger(hash);
 
-            if (NetworkManager.Instance == null || m_Identity == null) return;
-            if (!m_Identity.HasAuthority) return;
+            if (NetworkManager.Instance == null || NetworkId == 0) return;
+            if (!HasAuthority) return;
 
             // Instantly send a trigger packet over the network
             using (MessageWriter payloadWriter = new MessageWriter())
@@ -228,7 +226,7 @@ namespace FrizzNet.Core
                 byte[] payloadBytes = payloadWriter.ToArray();
                 using (MessageWriter systemWriter = new MessageWriter())
                 {
-                    systemWriter.WriteLong((long)m_Identity.NetworkId);
+                    systemWriter.WriteLong((long)NetworkId);
                     systemWriter.WriteInt(payloadBytes.Length);
                     systemWriter.WriteRawBytes(payloadBytes);
 

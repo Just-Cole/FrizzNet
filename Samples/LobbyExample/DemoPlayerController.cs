@@ -12,25 +12,19 @@ namespace FrizzNet.Samples
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [FrizzHelp("Reads keyboard inputs to move and rotate player characters possessing authority. Renders hovering profile name tags on screen.")]
-    public class DemoPlayerController : MonoBehaviour
+    public class DemoPlayerController : NetworkBehaviour
     {
-        private NetworkIdentity m_Identity;
-
         [Header("Movement Settings")]
         [SerializeField] private float m_Speed = 5f;
 
         private Color m_PlayerColor;
         private string m_SteamName = "Connecting...";
 
-        private void Awake()
-        {
-            m_Identity = GetComponent<NetworkIdentity>();
-        }
 
         private void Start()
         {
             // Give each player a unique random color based on their Owner ID
-            Random.InitState((int)m_Identity.OwnerConnectionId);
+            Random.InitState((int)NetworkIdentity.OwnerConnectionId);
             m_PlayerColor = new Color(Random.value, Random.value, Random.value);
 
             // Apply color to the material of the Cube
@@ -41,9 +35,9 @@ namespace FrizzNet.Samples
             }
 
             // Fetch Steam Username associated with this player character
-            if (SteamManager.Initialized && m_Identity.OwnerConnectionId != 0)
+            if (SteamManager.Initialized && NetworkIdentity.OwnerConnectionId != 0)
             {
-                m_SteamName = SteamFriends.GetFriendPersonaName(new CSteamID(m_Identity.OwnerConnectionId));
+                m_SteamName = SteamFriends.GetFriendPersonaName(new CSteamID(NetworkIdentity.OwnerConnectionId));
             }
             else
             {
@@ -54,7 +48,7 @@ namespace FrizzNet.Samples
         private void Update()
         {
             // Only read input and move if this local client has authority over this object!
-            if (!m_Identity.HasAuthority) return;
+            if (!HasAuthority) return;
 
             float horizontal = 0f;
             float vertical = 0f;
@@ -97,7 +91,7 @@ namespace FrizzNet.Samples
             // Only draw if the player is in front of the camera
             if (screenPos.z > 0)
             {
-                string tag = m_Identity.IsLocalPlayer ? $"<b><color=#39FF14>{m_SteamName} (You)</color></b>" : m_SteamName;
+                string tag = IsLocalPlayer ? $"<b><color=#39FF14>{m_SteamName} (You)</color></b>" : m_SteamName;
                 
                 GUIStyle nameTagStyle = new GUIStyle(GUI.skin.label)
                 {
@@ -111,7 +105,7 @@ namespace FrizzNet.Samples
                 GUI.Label(new Rect(screenPos.x - 100 + 1, Screen.height - screenPos.y - 12 + 1, 200, 24), tag, nameTagStyle);
 
                 // Draw foreground colored text
-                nameTagStyle.normal.textColor = m_Identity.IsLocalPlayer ? Color.green : Color.white;
+                nameTagStyle.normal.textColor = IsLocalPlayer ? Color.green : Color.white;
                 GUI.Label(new Rect(screenPos.x - 100, Screen.height - screenPos.y - 12, 200, 24), tag, nameTagStyle);
             }
         }

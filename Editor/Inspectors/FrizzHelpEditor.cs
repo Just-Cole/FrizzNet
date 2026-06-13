@@ -127,9 +127,9 @@ namespace FrizzNet.Editor.Inspectors
     [CanEditMultipleObjects]
     public class NetworkIdentityEditor : FrizzHelpEditorBase { }
 
-    [CustomEditor(typeof(FrizzNetworkTransform))]
+    [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
-    public class FrizzNetworkTransformEditor : FrizzHelpEditorBase { }
+    public class NetworkBehaviourEditor : FrizzHelpEditorBase { }
 
     [CustomEditor(typeof(FrizzVoiceManager))]
     [CanEditMultipleObjects]
@@ -138,10 +138,6 @@ namespace FrizzNet.Editor.Inspectors
     [CustomEditor(typeof(FrizzPlayerSpawner))]
     [CanEditMultipleObjects]
     public class FrizzPlayerSpawnerEditor : FrizzHelpEditorBase { }
-
-    [CustomEditor(typeof(FrizzNetworkAnimator))]
-    [CanEditMultipleObjects]
-    public class FrizzNetworkAnimatorEditor : FrizzHelpEditorBase { }
 
     [CustomEditor(typeof(FrizzServerSpawner))]
     [CanEditMultipleObjects]

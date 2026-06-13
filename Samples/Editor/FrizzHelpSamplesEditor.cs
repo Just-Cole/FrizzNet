@@ -10,10 +10,6 @@ namespace FrizzNet.Samples.Editor
     [CanEditMultipleObjects]
     public class DemoSpawnManagerEditor : FrizzHelpEditorBase { }
 
-    [CustomEditor(typeof(DemoPlayerController))]
-    [CanEditMultipleObjects]
-    public class DemoPlayerControllerEditor : FrizzHelpEditorBase { }
-
     [CustomEditor(typeof(LobbyExample))]
     [CanEditMultipleObjects]
     public class LobbyExampleEditor : FrizzHelpEditorBase { }

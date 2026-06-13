@@ -333,6 +333,7 @@ namespace FrizzNet.Core
             identity.SetAuthority(hasAuthority, ownerId == SteamUser.GetSteamID().m_SteamID);
 
             m_NetworkObjects.Add(networkId, identity);
+            identity.OnSpawn();
 
             // Notify all clients
             using (MessageWriter writer = new MessageWriter())
@@ -527,6 +528,7 @@ namespace FrizzNet.Core
             identity.SetAuthority(isLocalOwner, isLocalOwner);
 
             m_NetworkObjects.Add(networkId, identity);
+            identity.OnSpawn();
 
             FrizzLogger.LogNetwork($"Client spawned networked object '{prefabName}' with NetworkID {networkId}");
         }

@@ -9,9 +9,8 @@ namespace FrizzNet.Core
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [FrizzHelp("Synchronizes the position and rotation of this GameObject across the network unreliably. Smoothly interpolates remote positions to eliminate jitter.", "index.html#FrizzNetworkTransform")]
-    public class FrizzNetworkTransform : MonoBehaviour
+    public class FrizzNetworkTransform : NetworkBehaviour
     {
-        private NetworkIdentity m_Identity;
 
         [Header("Sync Configuration")]
         [Tooltip("Number of synchronization packets sent per second.")]
@@ -43,7 +42,6 @@ namespace FrizzNet.Core
 
         private void Awake()
         {
-            m_Identity = GetComponent<NetworkIdentity>();
             m_SendInterval = 1f / m_SendRate;
         }
 
@@ -58,9 +56,9 @@ namespace FrizzNet.Core
 
         private void Update()
         {
-            if (m_Identity == null || m_Identity.NetworkId == 0) return;
+            if (NetworkId == 0) return;
 
-            if (m_Identity.HasAuthority)
+            if (HasAuthority)
             {
                 // Send updates if we have moved/rotated past thresholds
                 if (Time.time - m_LastSendTime >= m_SendInterval)
@@ -95,7 +93,7 @@ namespace FrizzNet.Core
 
                 using (MessageWriter writer = new MessageWriter())
                 {
-                    writer.WriteLong((long)m_Identity.NetworkId);
+                    writer.WriteLong((long)NetworkId);
                     writer.WriteFloat(currentPos.x);
                     writer.WriteFloat(currentPos.y);
                     writer.WriteFloat(currentPos.z);

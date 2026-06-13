@@ -23,6 +23,25 @@ namespace FrizzNet.Core
         [Tooltip("Whether this object represents the local player character.")]
         [ReadOnlyInspector] [SerializeField] private bool m_IsLocalPlayer;
 
+        private NetworkBehaviour[] m_Behaviours;
+
+        private void Awake()
+        {
+            InitializeBehaviours();
+        }
+
+        /// <summary>
+        /// Scans and caches all attached NetworkBehaviour scripts, assigning this identity to them.
+        /// </summary>
+        public void InitializeBehaviours()
+        {
+            m_Behaviours = GetComponents<NetworkBehaviour>();
+            foreach (var behaviour in m_Behaviours)
+            {
+                behaviour.NetworkIdentity = this;
+            }
+        }
+
         /// <summary>
         /// Gets whether the local client has networking authority over this object.
         /// </summary>
@@ -38,8 +57,60 @@ namespace FrizzNet.Core
         /// </summary>
         public void SetAuthority(bool hasAuthority, bool isLocalPlayer)
         {
+            bool wasAuthority = m_HasAuthority;
             m_HasAuthority = hasAuthority;
             m_IsLocalPlayer = isLocalPlayer;
+
+            if (NetworkId != 0 && m_Behaviours != null)
+            {
+                foreach (var behaviour in m_Behaviours)
+                {
+                    if (behaviour == null) continue;
+                    if (hasAuthority && !wasAuthority)
+                    {
+                        behaviour.OnStartAuthority();
+                    }
+                    else if (!hasAuthority && wasAuthority)
+                    {
+                        behaviour.OnStopAuthority();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Invoked by the NetworkManager when this identity is registered on the network.
+        /// </summary>
+        public void OnSpawn()
+        {
+            InitializeBehaviours();
+            foreach (var behaviour in m_Behaviours)
+            {
+                if (behaviour == null) continue;
+                behaviour.OnNetworkSpawn();
+                if (HasAuthority)
+                {
+                    behaviour.OnStartAuthority();
+                }
+                if (IsLocalPlayer)
+                {
+                    behaviour.OnStartLocalPlayer();
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (NetworkId != 0 && m_Behaviours != null)
+            {
+                foreach (var behaviour in m_Behaviours)
+                {
+                    if (behaviour != null)
+                    {
+                        behaviour.OnNetworkDespawn();
+                    }
+                }
+            }
         }
     }
 
