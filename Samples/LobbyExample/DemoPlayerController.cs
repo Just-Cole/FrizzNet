@@ -2,6 +2,7 @@ using UnityEngine;
 using Steamworks;
 using FrizzNet.Core;
 using FrizzNet.Steam;
+using FrizzNet.Logging;
 using UnityEngine.InputSystem;
 
 namespace FrizzNet.Samples
@@ -107,6 +108,58 @@ namespace FrizzNet.Samples
                 // Draw foreground colored text
                 nameTagStyle.normal.textColor = IsLocalPlayer ? Color.green : Color.white;
                 GUI.Label(new Rect(screenPos.x - 100, Screen.height - screenPos.y - 12, 200, 24), tag, nameTagStyle);
+            }
+        }
+
+        public void Grow(float amount)
+        {
+            Vector3 targetScale = transform.localScale + new Vector3(amount, amount, amount);
+            // Cap maximum scale to 8.0f to prevent players from blocking the entire play arena
+            if (targetScale.x > 8.0f)
+            {
+                targetScale = new Vector3(8.0f, 8.0f, 8.0f);
+            }
+            transform.localScale = targetScale;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            // Only resolve player-player collisions authoritatively on the Host
+            if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost) return;
+
+            DemoPlayerController otherPlayer = other.GetComponent<DemoPlayerController>();
+            if (otherPlayer != null)
+            {
+                float mySize = transform.localScale.x;
+                float otherSize = otherPlayer.transform.localScale.x;
+
+                // Check if I am bigger than the other player by a reasonable margin
+                if (mySize > otherSize + 0.05f)
+                {
+                    // Consumed! Other player dies and respawns
+                    otherPlayer.DieAndRespawn();
+
+                    // Host grows a bit for eating another player
+                    Grow(0.3f);
+                    FrizzLogger.LogNetwork($"[Game] Player with SteamID {NetworkIdentity.OwnerConnectionId} consumed player with SteamID {otherPlayer.NetworkIdentity.OwnerConnectionId}!");
+                }
+            }
+        }
+
+        public void DieAndRespawn()
+        {
+            // Reset size to default
+            transform.localScale = Vector3.one;
+
+            // Find a random spawn point
+            DemoSpawnManager spawnManager = FindAnyObjectByType<DemoSpawnManager>();
+            if (spawnManager != null)
+            {
+                transform.position = spawnManager.GetRandomSpawnPosition();
+            }
+            else
+            {
+                transform.position = new Vector3(Random.Range(-8f, 8f), 0.5f, Random.Range(-8f, 8f));
             }
         }
     }

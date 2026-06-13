@@ -555,6 +555,17 @@ namespace FrizzNet.Core
             ulong networkId = (ulong)reader.ReadLong();
             Vector3 pos = new Vector3(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
             Quaternion rot = new Quaternion(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
+            
+            bool hasScale = false;
+            Vector3 scale = Vector3.one;
+            if (reader.RemainingBytes >= 1)
+            {
+                hasScale = reader.ReadBool();
+                if (hasScale && reader.RemainingBytes >= 12)
+                {
+                    scale = new Vector3(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
+                }
+            }
 
             if (m_NetworkObjects.TryGetValue(networkId, out NetworkIdentity identity))
             {
@@ -564,7 +575,7 @@ namespace FrizzNet.Core
                 FrizzNetworkTransform netTransform = identity.GetComponent<FrizzNetworkTransform>();
                 if (netTransform != null)
                 {
-                    netTransform.OnReceiveUpdate(pos, rot);
+                    netTransform.OnReceiveUpdate(pos, rot, scale);
                 }
             }
 
@@ -581,6 +592,14 @@ namespace FrizzNet.Core
                     writer.WriteFloat(rot.y);
                     writer.WriteFloat(rot.z);
                     writer.WriteFloat(rot.w);
+                    
+                    writer.WriteBool(hasScale);
+                    if (hasScale)
+                    {
+                        writer.WriteFloat(scale.x);
+                        writer.WriteFloat(scale.y);
+                        writer.WriteFloat(scale.z);
+                    }
 
                     byte[] payload = writer.ToArray();
                     using (MessageWriter systemWriter = new MessageWriter())

@@ -38,6 +38,15 @@ namespace FrizzNet.Core
         private Quaternion m_TargetRotation;
         private bool m_HasReceivedFirstUpdate;
 
+        [Header("Scale Sync")]
+        [Tooltip("Should local scale also be synchronized across the network?")]
+        [SerializeField] private bool m_SyncScale = true;
+        [Tooltip("Minimum scale change required to trigger a network update.")]
+        [SerializeField] private float m_ScaleThreshold = 0.05f;
+
+        private Vector3 m_LastSentScale;
+        private Vector3 m_TargetScale;
+
         private const short MSG_TRANSFORM = -12;
 
         private void Awake()
@@ -49,9 +58,11 @@ namespace FrizzNet.Core
         {
             m_TargetPosition = transform.position;
             m_TargetRotation = transform.rotation;
+            m_TargetScale = transform.localScale;
             
             m_LastSentPosition = transform.position;
             m_LastSentRotation = transform.rotation;
+            m_LastSentScale = transform.localScale;
         }
 
         private void Update()
@@ -73,6 +84,10 @@ namespace FrizzNet.Core
                 {
                     transform.position = Vector3.Lerp(transform.position, m_TargetPosition, Time.deltaTime * m_LerpSpeed);
                     transform.rotation = Quaternion.Slerp(transform.rotation, m_TargetRotation, Time.deltaTime * m_LerpSpeed);
+                    if (m_SyncScale)
+                    {
+                        transform.localScale = Vector3.Lerp(transform.localScale, m_TargetScale, Time.deltaTime * m_LerpSpeed);
+                    }
                 }
             }
         }
@@ -81,15 +96,18 @@ namespace FrizzNet.Core
         {
             Vector3 currentPos = transform.position;
             Quaternion currentRot = transform.rotation;
+            Vector3 currentScale = transform.localScale;
 
             bool posChanged = Vector3.Distance(m_LastSentPosition, currentPos) > m_PositionThreshold;
             bool rotChanged = Quaternion.Angle(m_LastSentRotation, currentRot) > m_RotationThreshold;
+            bool scaleChanged = m_SyncScale && Vector3.Distance(m_LastSentScale, currentScale) > m_ScaleThreshold;
 
-            if (posChanged || rotChanged)
+            if (posChanged || rotChanged || scaleChanged)
             {
                 m_LastSendTime = Time.time;
                 m_LastSentPosition = currentPos;
                 m_LastSentRotation = currentRot;
+                m_LastSentScale = currentScale;
 
                 using (MessageWriter writer = new MessageWriter())
                 {
@@ -101,6 +119,14 @@ namespace FrizzNet.Core
                     writer.WriteFloat(currentRot.y);
                     writer.WriteFloat(currentRot.z);
                     writer.WriteFloat(currentRot.w);
+
+                    writer.WriteBool(m_SyncScale);
+                    if (m_SyncScale)
+                    {
+                        writer.WriteFloat(currentScale.x);
+                        writer.WriteFloat(currentScale.y);
+                        writer.WriteFloat(currentScale.z);
+                    }
 
                     // Client sends to server, Server sends to all clients
                     if (NetworkManager.Instance.IsHost)
@@ -119,15 +145,20 @@ namespace FrizzNet.Core
         /// Update target values received from the network.
         /// Called by the NetworkManager.
         /// </summary>
-        public void OnReceiveUpdate(Vector3 position, Quaternion rotation)
+        public void OnReceiveUpdate(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             m_TargetPosition = position;
             m_TargetRotation = rotation;
+            m_TargetScale = scale;
 
             if (!m_HasReceivedFirstUpdate)
             {
                 transform.position = position;
                 transform.rotation = rotation;
+                if (m_SyncScale)
+                {
+                    transform.localScale = scale;
+                }
                 m_HasReceivedFirstUpdate = true;
             }
         }

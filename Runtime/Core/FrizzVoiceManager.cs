@@ -41,6 +41,7 @@ namespace FrizzNet.Core
         private uint m_OptimalSampleRate;
         private bool m_IsRecording;
         private readonly Dictionary<ulong, FrizzVoiceSpeaker> m_ActiveSpeakers = new Dictionary<ulong, FrizzVoiceSpeaker>();
+        private byte[] m_DecompressBuffer;
 
         private const short MSG_VOICE = -13;
 
@@ -77,6 +78,9 @@ namespace FrizzNet.Core
             {
                 m_OptimalSampleRate = 22050;
             }
+
+            // Pre-allocate decompression buffer to prevent GC allocations in voice stream hot paths
+            m_DecompressBuffer = new byte[m_OptimalSampleRate * 2];
         }
 
         private void OnDestroy()
@@ -184,13 +188,17 @@ namespace FrizzNet.Core
         {
             if (!m_EnableVoice) return;
 
-            // Decompress audio using Steam User API
-            byte[] decompressedBuffer = new byte[m_OptimalSampleRate * 2]; // 1 second maximum buffer size
+            if (m_DecompressBuffer == null)
+            {
+                m_DecompressBuffer = new byte[m_OptimalSampleRate * 2];
+            }
+
+            // Decompress audio using Steam User API into the shared pre-allocated buffer
             EVoiceResult result = SteamUser.DecompressVoice(
                 compressedData,
                 (uint)compressedData.Length,
-                decompressedBuffer,
-                (uint)decompressedBuffer.Length,
+                m_DecompressBuffer,
+                (uint)m_DecompressBuffer.Length,
                 out uint bytesWritten,
                 m_OptimalSampleRate
             );
@@ -202,7 +210,7 @@ namespace FrizzNet.Core
                 float[] samples = new float[sampleCount];
                 for (int i = 0; i < sampleCount; i++)
                 {
-                    short pcmSample = (short)(decompressedBuffer[i * 2] | (decompressedBuffer[i * 2 + 1] << 8));
+                    short pcmSample = (short)(m_DecompressBuffer[i * 2] | (m_DecompressBuffer[i * 2 + 1] << 8));
                     samples[i] = (pcmSample / 32768.0f) * m_VolumeMultiplier;
                 }
 
