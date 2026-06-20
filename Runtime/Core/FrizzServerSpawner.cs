@@ -45,6 +45,7 @@ namespace FrizzNet.Core
             if (m_SpawnOnLobbyJoin)
             {
                 FrizzLobby.OnLobbyJoinedEvent += HandleLobbyJoined;
+                FrizzLobby.OnLobbyLeftEvent += HandleLobbyLeft;
             }
         }
 
@@ -53,7 +54,13 @@ namespace FrizzNet.Core
             if (m_SpawnOnLobbyJoin)
             {
                 FrizzLobby.OnLobbyJoinedEvent -= HandleLobbyJoined;
+                FrizzLobby.OnLobbyLeftEvent -= HandleLobbyLeft;
             }
+        }
+
+        private void HandleLobbyLeft()
+        {
+            m_HasSpawned = false;
         }
 
         private void HandleLobbyJoined(CSteamID lobbyId)

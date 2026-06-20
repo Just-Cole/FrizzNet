@@ -47,8 +47,6 @@ namespace FrizzNet.Core
         private Vector3 m_LastSentScale;
         private Vector3 m_TargetScale;
 
-        private const short MSG_TRANSFORM = -12;
-
         private void Awake()
         {
             m_SendInterval = 1f / m_SendRate;
@@ -92,6 +90,52 @@ namespace FrizzNet.Core
             }
         }
 
+        /// <summary>
+        /// Forces an immediate transform broadcast regardless of authority (host-only).
+        /// </summary>
+        public void ForceBroadcastState()
+        {
+            if (NetworkId == 0 || NetworkManager.Instance == null) return;
+            if (!NetworkManager.Instance.IsHost && !HasAuthority) return;
+
+            m_LastSendTime = Time.time;
+            m_LastSentPosition = transform.position;
+            m_LastSentRotation = transform.rotation;
+            m_LastSentScale = transform.localScale;
+            SendTransformUpdate(transform.position, transform.rotation, transform.localScale);
+        }
+
+        private void SendTransformUpdate(Vector3 currentPos, Quaternion currentRot, Vector3 currentScale)
+        {
+            using (MessageWriter writer = new MessageWriter())
+            {
+                writer.WriteLong((long)NetworkId);
+                writer.WriteFloat(currentPos.x);
+                writer.WriteFloat(currentPos.y);
+                writer.WriteFloat(currentPos.z);
+                writer.WriteFloat(currentRot.x);
+                writer.WriteFloat(currentRot.y);
+                writer.WriteFloat(currentRot.z);
+                writer.WriteFloat(currentRot.w);
+                writer.WriteBool(m_SyncScale);
+                if (m_SyncScale)
+                {
+                    writer.WriteFloat(currentScale.x);
+                    writer.WriteFloat(currentScale.y);
+                    writer.WriteFloat(currentScale.z);
+                }
+
+                if (NetworkManager.Instance.IsHost)
+                {
+                    NetworkManager.Instance.SendToAll(FrizzSystemMessages.Transform, writer, false);
+                }
+                else if (NetworkManager.Instance.IsClient)
+                {
+                    NetworkManager.Instance.SendToServer(FrizzSystemMessages.Transform, writer, false);
+                }
+            }
+        }
+
         private void CheckAndSendUpdate()
         {
             Vector3 currentPos = transform.position;
@@ -108,36 +152,7 @@ namespace FrizzNet.Core
                 m_LastSentPosition = currentPos;
                 m_LastSentRotation = currentRot;
                 m_LastSentScale = currentScale;
-
-                using (MessageWriter writer = new MessageWriter())
-                {
-                    writer.WriteLong((long)NetworkId);
-                    writer.WriteFloat(currentPos.x);
-                    writer.WriteFloat(currentPos.y);
-                    writer.WriteFloat(currentPos.z);
-                    writer.WriteFloat(currentRot.x);
-                    writer.WriteFloat(currentRot.y);
-                    writer.WriteFloat(currentRot.z);
-                    writer.WriteFloat(currentRot.w);
-
-                    writer.WriteBool(m_SyncScale);
-                    if (m_SyncScale)
-                    {
-                        writer.WriteFloat(currentScale.x);
-                        writer.WriteFloat(currentScale.y);
-                        writer.WriteFloat(currentScale.z);
-                    }
-
-                    // Client sends to server, Server sends to all clients
-                    if (NetworkManager.Instance.IsHost)
-                    {
-                        NetworkManager.Instance.SendToAll(MSG_TRANSFORM, writer, false); // Unreliable for transform sync
-                    }
-                    else if (NetworkManager.Instance.IsClient)
-                    {
-                        NetworkManager.Instance.SendToServer(MSG_TRANSFORM, writer, false); // Unreliable for transform sync
-                    }
-                }
+                SendTransformUpdate(currentPos, currentRot, currentScale);
             }
         }
 

@@ -147,20 +147,11 @@ namespace FrizzNet.Samples
                     writer.WriteString(senderName);
                     writer.WriteString(message);
 
-                    // Send to all clients except the original sender
-                    byte[] payload = writer.ToArray();
-                    using (MessageWriter systemWriter = new MessageWriter())
+                    foreach (ulong clientConnId in NetworkManager.Instance.ConnectedClients)
                     {
-                        systemWriter.WriteShort(MSG_CHAT);
-                        systemWriter.WriteRawBytes(payload);
-                        byte[] data = systemWriter.ToArray();
-
-                        foreach (var clientConnId in NetworkManager.Instance.ConnectedClients)
+                        if (clientConnId != senderId)
                         {
-                            if (clientConnId != senderId)
-                            {
-                                NetworkManager.Instance.Transport.SendToClient(clientConnId, data, data.Length, true);
-                            }
+                            NetworkManager.Instance.SendToClient(clientConnId, MSG_CHAT, writer, true);
                         }
                     }
                 }

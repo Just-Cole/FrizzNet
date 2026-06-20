@@ -14,11 +14,23 @@ namespace FrizzNet.Core
     /// message routing, and dynamic object spawning.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(SteamTransport))]
     [FrizzHelp("The core manager coordinating player connection rosters, custom packet handlers routing, and network object spawn synchronization.", "index.html#NetworkManager")]
     public class NetworkManager : MonoBehaviour
     {
         public static NetworkManager Instance { get; private set; }
+
+        /// <summary>
+        /// The local player's connection ID (typically SteamID64). Set by the active transport.
+        /// </summary>
+        public static ulong LocalConnectionId { get; private set; }
+
+        /// <summary>
+        /// Sets the local connection ID. Called by the transport layer on initialization.
+        /// </summary>
+        public static void SetLocalConnectionId(ulong connectionId)
+        {
+            LocalConnectionId = connectionId;
+        }
 
         [Header("Configuration")]
         [Tooltip("The transport implementation to use. Will automatically search on this GameObject if not set.")]
@@ -37,14 +49,8 @@ namespace FrizzNet.Core
         [Tooltip("Filters framework log output severity printed to the Unity console.")]
         [SerializeField] private FrizzLogLevel m_LogLevel = FrizzLogLevel.Info;
 
-        // System Reserved Messages (negative values to avoid developer overlap)
-        private const short MSG_SPAWN = -10;
-        private const short MSG_DESTROY = -11;
-        private const short MSG_TRANSFORM = -12;
-        private const short MSG_VOICE = -13;
-        private const short MSG_ANIMATION = -14;
-
         private INetworkTransport m_Transport;
+        private bool m_ClientDisconnectHandled;
         private readonly Dictionary<short, Action<ulong, MessageReader>> m_MessageHandlers = new Dictionary<short, Action<ulong, MessageReader>>();
         
         // Networked Objects Tracking
@@ -61,6 +67,7 @@ namespace FrizzNet.Core
         public bool IsClient => m_Transport != null && m_Transport.IsClient;
         public IReadOnlyCollection<ulong> ConnectedClients => m_ConnectedClients;
         public IReadOnlyDictionary<ulong, NetworkIdentity> NetworkObjects => m_NetworkObjects;
+        internal ulong NextNetworkIdSeed => m_NextNetworkId;
 
         // Network Options properties
         public bool DontDestroyOnLoadOnAwake { get => m_DontDestroyOnLoad; set => m_DontDestroyOnLoad = value; }
@@ -107,7 +114,11 @@ namespace FrizzNet.Core
         {
             if (m_TransportComponent == null)
             {
-                m_TransportComponent = GetComponent<SteamTransport>();
+                m_TransportComponent = GetComponent<INetworkTransport>() as MonoBehaviour;
+                if (m_TransportComponent == null)
+                {
+                    m_TransportComponent = GetComponent<SteamTransport>();
+                }
             }
         }
 #endif
@@ -145,7 +156,15 @@ namespace FrizzNet.Core
         {
             if (m_TransportComponent == null)
             {
-                m_TransportComponent = GetComponent<INetworkTransport>() as MonoBehaviour;
+                MonoBehaviour[] components = GetComponents<MonoBehaviour>();
+                foreach (MonoBehaviour component in components)
+                {
+                    if (component != null && component.enabled && component is INetworkTransport)
+                    {
+                        m_TransportComponent = component;
+                        break;
+                    }
+                }
             }
 
             if (m_TransportComponent is INetworkTransport transport)
@@ -224,11 +243,14 @@ namespace FrizzNet.Core
 
         private void RegisterSystemHandlers()
         {
-            RegisterHandler(MSG_SPAWN, HandleSystemSpawn);
-            RegisterHandler(MSG_DESTROY, HandleSystemDestroy);
-            RegisterHandler(MSG_TRANSFORM, HandleSystemTransform);
-            RegisterHandler(MSG_VOICE, HandleSystemVoice);
-            RegisterHandler(MSG_ANIMATION, HandleSystemAnimation);
+            RegisterHandler(FrizzSystemMessages.Spawn, HandleSystemSpawn);
+            RegisterHandler(FrizzSystemMessages.Destroy, HandleSystemDestroy);
+            RegisterHandler(FrizzSystemMessages.Transform, HandleSystemTransform);
+            RegisterHandler(FrizzSystemMessages.Voice, HandleSystemVoice);
+            RegisterHandler(FrizzSystemMessages.Animation, HandleSystemAnimation);
+            RegisterHandler(FrizzSystemMessages.Rpc, HandleSystemRpc);
+            RegisterHandler(FrizzSystemMessages.SyncVar, HandleSystemSyncVar);
+            RegisterHandler(FrizzSystemMessages.Rigidbody, HandleSystemRigidbody);
         }
 
         #endregion
@@ -327,10 +349,10 @@ namespace FrizzNet.Core
 
             identity.NetworkId = networkId;
             identity.OwnerConnectionId = ownerId;
+            identity.PrefabAssetName = prefabName;
             
-            // Host is owner?
-            bool hasAuthority = (ownerId == 0 || ownerId == SteamUser.GetSteamID().m_SteamID);
-            identity.SetAuthority(hasAuthority, ownerId == SteamUser.GetSteamID().m_SteamID);
+            bool hasAuthority = (ownerId == 0 || ownerId == LocalConnectionId);
+            identity.SetAuthority(hasAuthority, ownerId == LocalConnectionId);
 
             m_NetworkObjects.Add(networkId, identity);
             identity.OnSpawn();
@@ -349,7 +371,7 @@ namespace FrizzNet.Core
                 writer.WriteFloat(rotation.w);
                 writer.WriteLong((long)ownerId);
 
-                SendToAll(MSG_SPAWN, writer, true);
+                SendToAll(FrizzSystemMessages.Spawn, writer, true);
             }
 
             FrizzLogger.LogNetwork($"Host spawned networked object '{prefabName}' with NetworkID {networkId}");
@@ -377,7 +399,7 @@ namespace FrizzNet.Core
             using (MessageWriter writer = new MessageWriter())
             {
                 writer.WriteLong((long)networkId);
-                SendToAll(MSG_DESTROY, writer, true);
+                SendToAll(FrizzSystemMessages.Destroy, writer, true);
             }
 
             m_NetworkObjects.Remove(networkId);
@@ -406,7 +428,7 @@ namespace FrizzNet.Core
                 using (MessageWriter writer = new MessageWriter())
                 {
                     writer.WriteLong((long)netId);
-                    writer.WriteString(identity.gameObject.name.Replace("(Clone)", "").Trim());
+                    writer.WriteString(GetPrefabNameForIdentity(identity));
                     writer.WriteFloat(pos.x);
                     writer.WriteFloat(pos.y);
                     writer.WriteFloat(pos.z);
@@ -416,7 +438,7 @@ namespace FrizzNet.Core
                     writer.WriteFloat(rot.w);
                     writer.WriteLong((long)identity.OwnerConnectionId);
 
-                    SendToClient(conn.ConnectionId, MSG_SPAWN, writer, true);
+                    SendToClient(conn.ConnectionId, FrizzSystemMessages.Spawn, writer, true);
                 }
             }
 
@@ -448,12 +470,16 @@ namespace FrizzNet.Core
 
         private void HandleConnectedToServer()
         {
+            m_ClientDisconnectHandled = false;
             FrizzLogger.LogNetwork("Client event: Connected to server.");
             OnConnected?.Invoke();
         }
 
         private void HandleDisconnectedFromServer()
         {
+            if (m_ClientDisconnectHandled) return;
+            m_ClientDisconnectHandled = true;
+
             FrizzLogger.LogNetwork("Client event: Disconnected from server.");
             
             // Clean up local spawned objects
@@ -524,7 +550,9 @@ namespace FrizzNet.Core
             identity.NetworkId = networkId;
             identity.OwnerConnectionId = ownerId;
             
-            bool isLocalOwner = (ownerId == SteamUser.GetSteamID().m_SteamID);
+            identity.PrefabAssetName = prefabName;
+
+            bool isLocalOwner = (ownerId == LocalConnectionId);
             identity.SetAuthority(isLocalOwner, isLocalOwner);
 
             m_NetworkObjects.Add(networkId, identity);
@@ -582,38 +610,49 @@ namespace FrizzNet.Core
             // Host replicates the transform packet to all other clients unreliably
             if (IsHost)
             {
-                using (MessageWriter writer = new MessageWriter())
+                if (m_NetworkObjects.TryGetValue(networkId, out NetworkIdentity targetIdentity))
                 {
-                    writer.WriteLong((long)networkId);
-                    writer.WriteFloat(pos.x);
-                    writer.WriteFloat(pos.y);
-                    writer.WriteFloat(pos.z);
-                    writer.WriteFloat(rot.x);
-                    writer.WriteFloat(rot.y);
-                    writer.WriteFloat(rot.z);
-                    writer.WriteFloat(rot.w);
-                    
-                    writer.WriteBool(hasScale);
-                    if (hasScale)
-                    {
-                        writer.WriteFloat(scale.x);
-                        writer.WriteFloat(scale.y);
-                        writer.WriteFloat(scale.z);
-                    }
+                    RelayTransformToClients(connectionId, networkId, pos, rot, hasScale, scale, targetIdentity);
+                }
+            }
+        }
 
-                    byte[] payload = writer.ToArray();
-                    using (MessageWriter systemWriter = new MessageWriter())
-                    {
-                        systemWriter.WriteShort(MSG_TRANSFORM);
-                        systemWriter.WriteRawBytes(payload);
-                        byte[] data = systemWriter.ToArray();
+        private void RelayTransformToClients(ulong senderId, ulong networkId, Vector3 pos, Quaternion rot, bool hasScale, Vector3 scale, NetworkIdentity targetIdentity)
+        {
+            using (MessageWriter writer = new MessageWriter())
+            {
+                writer.WriteLong((long)networkId);
+                writer.WriteFloat(pos.x);
+                writer.WriteFloat(pos.y);
+                writer.WriteFloat(pos.z);
+                writer.WriteFloat(rot.x);
+                writer.WriteFloat(rot.y);
+                writer.WriteFloat(rot.z);
+                writer.WriteFloat(rot.w);
+                writer.WriteBool(hasScale);
+                if (hasScale)
+                {
+                    writer.WriteFloat(scale.x);
+                    writer.WriteFloat(scale.y);
+                    writer.WriteFloat(scale.z);
+                }
 
-                        foreach (var clientId in m_ConnectedClients)
+                byte[] payload = writer.ToArray();
+                using (MessageWriter systemWriter = new MessageWriter())
+                {
+                    systemWriter.WriteShort(FrizzSystemMessages.Transform);
+                    systemWriter.WriteRawBytes(payload);
+                    byte[] data = systemWriter.ToArray();
+
+                    IEnumerable<ulong> clients = FrizzInterestManager.Instance != null
+                        ? FrizzInterestManager.Instance.FilterInterestedClients(targetIdentity)
+                        : m_ConnectedClients;
+
+                    foreach (ulong clientId in clients)
+                    {
+                        if (clientId != senderId)
                         {
-                            if (clientId != connectionId)
-                            {
-                                m_Transport.SendToClient(clientId, data, data.Length, false); // Unreliable for transform replication
-                            }
+                            m_Transport.SendToClient(clientId, data, data.Length, false);
                         }
                     }
                 }
@@ -638,23 +677,22 @@ namespace FrizzNet.Core
                     byte[] payload = writer.ToArray();
                     using (MessageWriter systemWriter = new MessageWriter())
                     {
-                        systemWriter.WriteShort(MSG_VOICE);
+                        systemWriter.WriteShort(FrizzSystemMessages.Voice);
                         systemWriter.WriteRawBytes(payload);
                         byte[] data = systemWriter.ToArray();
 
-                        foreach (var clientId in m_ConnectedClients)
+                        foreach (ulong clientId in m_ConnectedClients)
                         {
                             if (clientId != connectionId)
                             {
-                                m_Transport.SendToClient(clientId, data, data.Length, false); // Unreliable for voice
+                                m_Transport.SendToClient(clientId, data, data.Length, false);
                             }
                         }
                     }
                 }
             }
 
-            // Distribute to local speaker manager if it's not the local client
-            if (senderId != SteamUser.GetSteamID().m_SteamID)
+            if (senderId != LocalConnectionId)
             {
                 FrizzVoiceManager.Instance?.ReceiveVoiceData(senderId, compressedData);
             }
@@ -678,15 +716,15 @@ namespace FrizzNet.Core
                     byte[] payload = writer.ToArray();
                     using (MessageWriter systemWriter = new MessageWriter())
                     {
-                        systemWriter.WriteShort(MSG_ANIMATION);
+                        systemWriter.WriteShort(FrizzSystemMessages.Animation);
                         systemWriter.WriteRawBytes(payload);
                         byte[] data = systemWriter.ToArray();
 
-                        foreach (var clientId in m_ConnectedClients)
+                        foreach (ulong clientId in m_ConnectedClients)
                         {
                             if (clientId != connectionId)
                             {
-                                m_Transport.SendToClient(clientId, data, data.Length, true); // Reliable for animator updates
+                                m_Transport.SendToClient(clientId, data, data.Length, true);
                             }
                         }
                     }
@@ -708,6 +746,209 @@ namespace FrizzNet.Core
                     }
                 }
             }
+        }
+
+        #endregion
+
+        #region RPC and SyncVar Handlers
+
+        private void HandleSystemRpc(ulong connectionId, MessageReader reader)
+        {
+            int remaining = reader.RemainingBytes;
+            if (remaining <= 0) return;
+
+            byte[] payload = reader.ReadRawBytes(remaining);
+            using (MessageReader localReader = new MessageReader(payload))
+            {
+                ulong networkId = (ulong)localReader.ReadLong();
+                if (!m_NetworkObjects.TryGetValue(networkId, out NetworkIdentity identity) || identity == null)
+                {
+                    return;
+                }
+
+                NetworkBehaviour[] behaviours = identity.GetComponents<NetworkBehaviour>();
+                foreach (NetworkBehaviour behaviour in behaviours)
+                {
+                    if (behaviour != null)
+                    {
+                        behaviour.DispatchRpcMessage(localReader);
+                        break;
+                    }
+                }
+            }
+
+            if (IsHost && connectionId != 0)
+            {
+                using (MessageWriter writer = new MessageWriter())
+                {
+                    writer.WriteRawBytes(payload);
+                    foreach (ulong clientId in m_ConnectedClients)
+                    {
+                        if (clientId != connectionId)
+                        {
+                            SendToClient(clientId, FrizzSystemMessages.Rpc, writer, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void HandleSystemSyncVar(ulong connectionId, MessageReader reader)
+        {
+            int remaining = reader.RemainingBytes;
+            if (remaining <= 0) return;
+
+            byte[] payload = reader.ReadRawBytes(remaining);
+            using (MessageReader localReader = new MessageReader(payload))
+            {
+                ApplySyncVarFromReader(localReader);
+            }
+
+            if (IsHost)
+            {
+                using (MessageWriter writer = new MessageWriter())
+                {
+                    writer.WriteRawBytes(payload);
+                    foreach (ulong clientId in m_ConnectedClients)
+                    {
+                        if (clientId != connectionId)
+                        {
+                            SendToClient(clientId, FrizzSystemMessages.SyncVar, writer, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ApplySyncVarFromReader(MessageReader reader)
+        {
+            ulong networkId = (ulong)reader.ReadLong();
+            short syncId = reader.ReadShort();
+
+            if (!m_NetworkObjects.TryGetValue(networkId, out NetworkIdentity identity) || identity == null)
+            {
+                return;
+            }
+
+            NetworkBehaviour[] behaviours = identity.GetComponents<NetworkBehaviour>();
+            foreach (NetworkBehaviour behaviour in behaviours)
+            {
+                if (behaviour != null && behaviour.TryApplySyncVar(syncId, reader))
+                {
+                    return;
+                }
+            }
+        }
+
+        private void HandleSystemRigidbody(ulong connectionId, MessageReader reader)
+        {
+            ulong networkId = (ulong)reader.ReadLong();
+            Vector3 pos = new Vector3(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
+            Vector3 vel = new Vector3(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
+
+            if (m_NetworkObjects.TryGetValue(networkId, out NetworkIdentity identity) && identity != null && !identity.HasAuthority)
+            {
+                FrizzNetworkRigidbody netRb = identity.GetComponent<FrizzNetworkRigidbody>();
+                if (netRb != null)
+                {
+                    netRb.OnReceiveUpdate(pos, vel);
+                }
+            }
+
+            if (IsHost)
+            {
+                using (MessageWriter writer = new MessageWriter())
+                {
+                    writer.WriteLong((long)networkId);
+                    writer.WriteFloat(pos.x);
+                    writer.WriteFloat(pos.y);
+                    writer.WriteFloat(pos.z);
+                    writer.WriteFloat(vel.x);
+                    writer.WriteFloat(vel.y);
+                    writer.WriteFloat(vel.z);
+
+                    byte[] payload = writer.ToArray();
+                    using (MessageWriter systemWriter = new MessageWriter())
+                    {
+                        systemWriter.WriteShort(FrizzSystemMessages.Rigidbody);
+                        systemWriter.WriteRawBytes(payload);
+                        byte[] data = systemWriter.ToArray();
+
+                        foreach (ulong clientId in m_ConnectedClients)
+                        {
+                            if (clientId != connectionId)
+                            {
+                                m_Transport.SendToClient(clientId, data, data.Length, false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region Host Migration Support
+
+        internal void PrepareForHostMigration(ulong nextNetworkId)
+        {
+            foreach (KeyValuePair<ulong, NetworkIdentity> pair in m_NetworkObjects)
+            {
+                if (pair.Value != null)
+                {
+                    Destroy(pair.Value.gameObject);
+                }
+            }
+            m_NetworkObjects.Clear();
+            m_ConnectedClients.Clear();
+            m_NextNetworkId = nextNetworkId;
+        }
+
+        internal GameObject SpawnFromSnapshot(ulong networkId, string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, ulong ownerId)
+        {
+            if (!IsHost || !m_PrefabRegistry.TryGetValue(prefabName, out NetworkIdentity prefab))
+            {
+                FrizzLogger.LogError($"Host migration spawn failed for prefab '{prefabName}'.");
+                return null;
+            }
+
+            if (networkId >= m_NextNetworkId)
+            {
+                m_NextNetworkId = networkId + 1;
+            }
+
+            GameObject obj = Instantiate(prefab.gameObject, position, rotation);
+            obj.SetActive(true);
+            obj.transform.localScale = scale;
+
+            NetworkIdentity identity = obj.GetComponent<NetworkIdentity>();
+            if (identity == null)
+            {
+                identity = obj.AddComponent<NetworkIdentity>();
+            }
+
+            identity.NetworkId = networkId;
+            identity.OwnerConnectionId = ownerId;
+            identity.PrefabAssetName = prefabName;
+
+            bool isLocalOwner = ownerId == LocalConnectionId;
+            identity.SetAuthority(isLocalOwner, isLocalOwner);
+
+            m_NetworkObjects.Add(networkId, identity);
+            identity.OnSpawn();
+            return obj;
+        }
+
+        private static string GetPrefabNameForIdentity(NetworkIdentity identity)
+        {
+            if (identity != null && !string.IsNullOrEmpty(identity.PrefabAssetName))
+            {
+                return identity.PrefabAssetName;
+            }
+
+            return identity != null
+                ? identity.gameObject.name.Replace("(Clone)", "").Trim()
+                : string.Empty;
         }
 
         #endregion

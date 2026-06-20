@@ -19,9 +19,14 @@ namespace FrizzNet.Samples
         [SerializeField] private string m_GameSceneName = "DemoGameScene";
 
         private string m_LobbyToJoinId = "";
+        private string m_JoinPassword = "";
         private string m_HostMigrationMessage = "";
         private float m_MigrationMessageTimer = 0f;
         private Vector2 m_ScrollPosition;
+        private Vector2 m_BrowserScrollPosition;
+        private readonly List<FrizzLobbyInfo> m_BrowserResults = new List<FrizzLobbyInfo>();
+        private bool m_BrowserLoading;
+        private string m_BrowserStatus = "";
 
         private void Start()
         {
@@ -59,7 +64,7 @@ namespace FrizzNet.Samples
                     if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != m_GameSceneName)
                     {
                         FrizzLogger.LogNetwork($"[Lobby] Host started the match. Loading game scene '{m_GameSceneName}'...");
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(m_GameSceneName);
+                        LoadGameScene();
                     }
                 }
             }
@@ -80,7 +85,7 @@ namespace FrizzNet.Samples
             GUI.backgroundColor = new Color(0.11f, 0.11f, 0.13f);
             
             // Set up a clean GUI area (more compact now)
-            GUILayout.BeginArea(new Rect(10, 10, 320, 380), "FrizzNet Lobby", GUI.skin.window);
+            GUILayout.BeginArea(new Rect(10, 10, 320, 520), "FrizzNet Lobby", GUI.skin.window);
             GUILayout.Space(12);
 
             m_ScrollPosition = GUILayout.BeginScrollView(m_ScrollPosition, false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
@@ -130,20 +135,68 @@ namespace FrizzNet.Samples
                 GUILayout.Space(10);
                 GUILayout.Label("Join Lobby by ID:", boldLabel);
                 m_LobbyToJoinId = GUILayout.TextField(m_LobbyToJoinId);
+                GUILayout.Label("Password (if required):", boldLabel);
+                m_JoinPassword = GUILayout.PasswordField(m_JoinPassword, '*');
 
-                // Set button color to light blue for secondary actions
                 GUI.backgroundColor = new Color(0.2f, 0.6f, 1f);
                 if (GUILayout.Button("<b>JOIN LOBBY</b>", new GUIStyle(GUI.skin.button) { richText = true }, GUILayout.Height(28)))
                 {
                     if (ulong.TryParse(m_LobbyToJoinId, out ulong lobbyId))
                     {
-                        FrizzLobby.Join(lobbyId);
+                        FrizzLobby.Join(lobbyId, m_JoinPassword);
                     }
                     else
                     {
                         Debug.LogError("Invalid Lobby ID format. Must be a numeric SteamID64.");
                     }
                 }
+
+                GUILayout.Space(10);
+                GUILayout.Label("Public Lobby Browser:", boldLabel);
+
+                GUI.backgroundColor = new Color(0.3f, 0.5f, 0.9f);
+                if (GUILayout.Button(m_BrowserLoading ? "Searching..." : "<b>REFRESH LOBBY LIST</b>", new GUIStyle(GUI.skin.button) { richText = true }, GUILayout.Height(24)))
+                {
+                    if (!m_BrowserLoading)
+                    {
+                        m_BrowserLoading = true;
+                        m_BrowserStatus = "Querying Steam...";
+                        FrizzLobbyBrowser.RequestLobbyList(
+                            results =>
+                            {
+                                m_BrowserResults.Clear();
+                                m_BrowserResults.AddRange(results);
+                                m_BrowserStatus = $"Found {results.Count} lobbies.";
+                                m_BrowserLoading = false;
+                            },
+                            error =>
+                            {
+                                m_BrowserStatus = error;
+                                m_BrowserLoading = false;
+                            });
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(m_BrowserStatus))
+                {
+                    GUILayout.Label(m_BrowserStatus, richLabel);
+                }
+
+                m_BrowserScrollPosition = GUILayout.BeginScrollView(m_BrowserScrollPosition, GUILayout.Height(120));
+                foreach (FrizzLobbyInfo info in m_BrowserResults)
+                {
+                    GUILayout.BeginHorizontal();
+                    string lockIcon = info.HasPassword ? "🔒" : "";
+                    GUILayout.Label($"{lockIcon} {info.Name} ({info.MemberCount}/{info.MaxMembers})", richLabel);
+                    if (GUILayout.Button("Join", GUILayout.Width(50)))
+                    {
+                        FrizzLobby.Join(info.LobbyId.m_SteamID, m_JoinPassword);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                GUILayout.EndScrollView();
+
+                GUI.backgroundColor = new Color(0.11f, 0.11f, 0.13f);
             }
             else
             {
@@ -168,7 +221,7 @@ namespace FrizzNet.Samples
                     {
                         FrizzLobby.SetMetadata("status", "started");
                         FrizzLogger.LogNetwork($"[Lobby] Host starting match. Loading scene '{m_GameSceneName}'...");
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(m_GameSceneName);
+                        LoadGameScene();
                     }
                     GUI.backgroundColor = new Color(0.11f, 0.13f, 0.11f);
                 }
@@ -218,6 +271,18 @@ namespace FrizzNet.Samples
             string newOwnerName = FrizzLobby.GetMemberName(newOwner);
             m_HostMigrationMessage = $"HOST MIGRATED! Owner is now: {newOwnerName}";
             m_MigrationMessageTimer = 5f;
+        }
+
+        private void LoadGameScene()
+        {
+            if (FrizzNetworkSceneManager.Instance != null)
+            {
+                FrizzNetworkSceneManager.Instance.LoadScene(m_GameSceneName);
+            }
+            else
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(m_GameSceneName);
+            }
         }
     }
 }

@@ -33,7 +33,7 @@ namespace FrizzNet.Core
         private float m_SendInterval;
         private float m_LastSendTime;
 
-        private const short MSG_ANIMATION = -14;
+        private const short MSG_ANIMATION = FrizzSystemMessages.Animation;
 
         // Public properties
         public Animator TargetAnimator { get => m_Animator; set => m_Animator = value; }

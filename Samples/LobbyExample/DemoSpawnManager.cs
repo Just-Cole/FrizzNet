@@ -4,6 +4,7 @@ using FrizzNet.Core;
 using FrizzNet.Steam;
 using FrizzNet.Logging;
 using FrizzNet.Messaging;
+using FrizzNet.Transport;
 
 namespace FrizzNet.Samples
 {
@@ -28,6 +29,9 @@ namespace FrizzNet.Samples
         [Header("Scene Configuration")]
         [Tooltip("Name of the lobby scene to return to on disconnect.")]
         [SerializeField] private string m_LobbySceneName = "DemoLobbyScene";
+
+        [Tooltip("Lobby scene used when testing with LocalTransport.")]
+        [SerializeField] private string m_LocalLobbySceneName = "DemoLocalTestScene";
 
         [Header("Spawn Settings")]
         [SerializeField] private Vector3 m_SpawnAreaMin = new Vector3(-8f, 0.5f, -8f);
@@ -78,32 +82,18 @@ namespace FrizzNet.Samples
             // Subscribe to network disconnection and lobby left events
             NetworkManager.OnDisconnected += HandleDisconnected;
             FrizzLobby.OnLobbyLeftEvent += HandleLobbyLeft;
+            FrizzLocalSession.OnSessionEnded += HandleLocalSessionEnded;
+            NetworkManager.OnConnected += HandleConnectedForLocalClient;
 
-            // Spawn host or clients depending on local connection role
-            if (FrizzLobby.InLobby)
-            {
-                CSteamID owner = FrizzLobby.GetOwner();
-                if (owner == SteamUser.GetSteamID())
-                {
-                    // If we are Host, register client readiness handler and spawn ourselves
-                    if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
-                    {
-                        NetworkManager.Instance.RegisterHandler(MSG_SCENE_READY, HandleClientSceneReady);
-                        SpawnHostPlayer();
-                    }
-                }
-                else
-                {
-                    // If we are Client, tell Host we are loaded and ready
-                    SendSceneReadyMessage();
-                }
-            }
+            TryBeginGameplaySession();
         }
 
         private void OnDestroy()
         {
             NetworkManager.OnDisconnected -= HandleDisconnected;
             FrizzLobby.OnLobbyLeftEvent -= HandleLobbyLeft;
+            FrizzLocalSession.OnSessionEnded -= HandleLocalSessionEnded;
+            NetworkManager.OnConnected -= HandleConnectedForLocalClient;
 
             if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
             {
@@ -277,13 +267,72 @@ namespace FrizzNet.Samples
         private void HandleDisconnected()
         {
             FrizzLogger.LogNetwork("[Game] Client disconnected from server. Returning to Lobby scene...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene(m_LobbySceneName);
+            LoadLobbyScene();
+        }
+
+        private void HandleLocalSessionEnded()
+        {
+            LoadLobbyScene();
         }
 
         private void HandleLobbyLeft()
         {
             FrizzLogger.LogNetwork("[Game] Left lobby. Returning to Lobby scene...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene(m_LobbySceneName);
+            LoadLobbyScene();
+        }
+
+        private void HandleConnectedForLocalClient()
+        {
+            if (FrizzLocalSession.InSession && NetworkManager.Instance != null && NetworkManager.Instance.IsClient)
+            {
+                TryBeginGameplaySession();
+            }
+        }
+
+        private void TryBeginGameplaySession()
+        {
+            if (NetworkManager.Instance == null) return;
+
+            bool steamHost = false;
+            if (FrizzLobby.InLobby && SteamManager.Initialized)
+            {
+                steamHost = FrizzLobby.GetOwner().m_SteamID == SteamUser.GetSteamID().m_SteamID;
+            }
+
+            bool localSession = FrizzLocalSession.InSession;
+            if (!FrizzLobby.InLobby && !localSession) return;
+
+            if (NetworkManager.Instance.IsHost && (steamHost || localSession))
+            {
+                NetworkManager.Instance.RegisterHandler(MSG_SCENE_READY, HandleClientSceneReady);
+                SpawnHostPlayer();
+            }
+            else if (NetworkManager.Instance.IsClient && localSession)
+            {
+                SendSceneReadyMessage();
+            }
+            else if (NetworkManager.Instance.IsClient && FrizzLobby.InLobby)
+            {
+                SendSceneReadyMessage();
+            }
+        }
+
+        private void LoadLobbyScene()
+        {
+            string sceneName = m_LobbySceneName;
+            if (FrizzLocalSession.InSession || (NetworkManager.Instance != null && NetworkManager.Instance.Transport is LocalTransport))
+            {
+                sceneName = m_LocalLobbySceneName;
+            }
+
+            if (FrizzNetworkSceneManager.Instance != null)
+            {
+                FrizzNetworkSceneManager.Instance.LoadSceneLocal(sceneName);
+            }
+            else
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+            }
         }
 
         private void SendSceneReadyMessage()
@@ -292,7 +341,7 @@ namespace FrizzNet.Samples
             {
                 using (MessageWriter writer = new MessageWriter())
                 {
-                    writer.WriteLong((long)SteamUser.GetSteamID().m_SteamID);
+                    writer.WriteLong((long)NetworkManager.LocalConnectionId);
                     NetworkManager.Instance.SendToServer(MSG_SCENE_READY, writer, true);
                 }
                 FrizzLogger.LogNetwork("[Game] Sent MSG_SCENE_READY to Host.");
@@ -310,8 +359,7 @@ namespace FrizzNet.Samples
         {
             if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
             {
-                ulong mySteamId = SteamUser.GetSteamID().m_SteamID;
-                SpawnPlayerForId(mySteamId);
+                SpawnPlayerForId(NetworkManager.LocalConnectionId);
                 StartGameLoop();
             }
         }

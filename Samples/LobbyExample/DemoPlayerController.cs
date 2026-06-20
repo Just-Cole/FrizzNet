@@ -42,7 +42,7 @@ namespace FrizzNet.Samples
             }
             else
             {
-                m_SteamName = "Local Bot";
+                m_SteamName = $"Player {NetworkIdentity.OwnerConnectionId}";
             }
         }
 
@@ -114,12 +114,17 @@ namespace FrizzNet.Samples
         public void Grow(float amount)
         {
             Vector3 targetScale = transform.localScale + new Vector3(amount, amount, amount);
-            // Cap maximum scale to 8.0f to prevent players from blocking the entire play arena
             if (targetScale.x > 8.0f)
             {
                 targetScale = new Vector3(8.0f, 8.0f, 8.0f);
             }
             transform.localScale = targetScale;
+
+            FrizzNetworkTransform netTransform = GetComponent<FrizzNetworkTransform>();
+            if (netTransform != null)
+            {
+                netTransform.ForceBroadcastState();
+            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -148,10 +153,8 @@ namespace FrizzNet.Samples
 
         public void DieAndRespawn()
         {
-            // Reset size to default
             transform.localScale = Vector3.one;
 
-            // Find a random spawn point
             DemoSpawnManager spawnManager = FindAnyObjectByType<DemoSpawnManager>();
             if (spawnManager != null)
             {
@@ -160,6 +163,12 @@ namespace FrizzNet.Samples
             else
             {
                 transform.position = new Vector3(Random.Range(-8f, 8f), 0.5f, Random.Range(-8f, 8f));
+            }
+
+            FrizzNetworkTransform netTransform = GetComponent<FrizzNetworkTransform>();
+            if (netTransform != null)
+            {
+                netTransform.ForceBroadcastState();
             }
         }
     }

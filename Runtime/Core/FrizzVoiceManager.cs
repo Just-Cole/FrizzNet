@@ -43,7 +43,7 @@ namespace FrizzNet.Core
         private readonly Dictionary<ulong, FrizzVoiceSpeaker> m_ActiveSpeakers = new Dictionary<ulong, FrizzVoiceSpeaker>();
         private byte[] m_DecompressBuffer;
 
-        private const short MSG_VOICE = -13;
+        private const short MSG_VOICE = FrizzSystemMessages.Voice;
 
         // Public getters for settings monitoring
         public bool EnableVoice { get => m_EnableVoice; set => m_EnableVoice = value; }
@@ -104,7 +104,6 @@ namespace FrizzNet.Core
                 return;
             }
 
-            // Determine if the local player wishes to record
             bool wantRecord = !m_UsePushToTalk || Input.GetKey(m_PushToTalkKey);
 
             if (wantRecord && !m_IsRecording)
@@ -116,10 +115,22 @@ namespace FrizzNet.Core
                 StopRecording();
             }
 
-            // Poll available recorded voice data
             if (m_IsRecording)
             {
                 PollAndSendVoice();
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (!m_EnableVoice || !m_SpatialAudio) return;
+
+            foreach (KeyValuePair<ulong, FrizzVoiceSpeaker> pair in m_ActiveSpeakers)
+            {
+                if (pair.Value != null)
+                {
+                    UpdateSpeakerPosition(pair.Key, pair.Value);
+                }
             }
         }
 

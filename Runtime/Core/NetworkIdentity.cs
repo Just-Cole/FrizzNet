@@ -17,6 +17,9 @@ namespace FrizzNet.Core
         [Tooltip("The connection ID (SteamID) of the player who owns / has authority over this object.")]
         [ReadOnlyInspector] public ulong OwnerConnectionId;
 
+        [Tooltip("Registered prefab asset name used for late-join and host migration replication.")]
+        [ReadOnlyInspector] public string PrefabAssetName;
+
         [Tooltip("Whether this object is controlled by the local client.")]
         [ReadOnlyInspector] [SerializeField] private bool m_HasAuthority;
 

@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Reflection;
 using FrizzNet.Core;
 using FrizzNet.Steam;
+using FrizzNet.Transport;
 
 namespace FrizzNet.Editor.Inspectors
 {
@@ -122,6 +123,10 @@ namespace FrizzNet.Editor.Inspectors
     [CustomEditor(typeof(SteamTransport))]
     [CanEditMultipleObjects]
     public class SteamTransportEditor : FrizzHelpEditorBase { }
+
+    [CustomEditor(typeof(LocalTransport))]
+    [CanEditMultipleObjects]
+    public class LocalTransportEditor : FrizzHelpEditorBase { }
 
     [CustomEditor(typeof(NetworkIdentity))]
     [CanEditMultipleObjects]

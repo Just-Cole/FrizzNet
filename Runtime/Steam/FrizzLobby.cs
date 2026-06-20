@@ -59,16 +59,21 @@ namespace FrizzNet.Steam
         }
 
         /// <summary>
-        /// Joins a Steam lobby by its unique ulong ID.
+        /// Pending password for the next lobby join attempt.
         /// </summary>
-        /// <param name="lobbyId">The lobby's Steam ID.</param>
-        public static void Join(ulong lobbyId)
+        public static string PendingJoinPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Joins a Steam lobby by its unique ulong ID with an optional password.
+        /// </summary>
+        public static void Join(ulong lobbyId, string password = "")
         {
+            PendingJoinPassword = password ?? string.Empty;
             Join(new CSteamID(lobbyId));
         }
 
         /// <summary>
-        /// Joins a Steam lobby by its CSteamID.
+        /// Joins a Steam lobby by its CSteamID with optional password stored in PendingJoinPassword.
         /// </summary>
         /// <param name="lobbyId">The lobby's Steam ID.</param>
         public static void Join(CSteamID lobbyId)
@@ -218,6 +223,19 @@ namespace FrizzNet.Steam
 
         internal static void TriggerLobbyJoined(CSteamID lobbyId)
         {
+            string requiredPassword = SteamMatchmaking.GetLobbyData(lobbyId, "password");
+            if (!string.IsNullOrEmpty(requiredPassword))
+            {
+                if (PendingJoinPassword != requiredPassword)
+                {
+                    FrizzLogger.LogError("Lobby join rejected: incorrect password.");
+                    SteamMatchmaking.LeaveLobby(lobbyId);
+                    PendingJoinPassword = string.Empty;
+                    return;
+                }
+            }
+
+            PendingJoinPassword = string.Empty;
             CurrentLobbyId = lobbyId;
             OnLobbyJoinedEvent?.Invoke(lobbyId);
         }

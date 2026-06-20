@@ -89,6 +89,11 @@ namespace FrizzNet.Steam
             FrizzLobby.OnLobbyLeftEvent += HandleLobbyLeft;
 
             FrizzLogger.LogInfo("SteamTransport callbacks registered.");
+
+            if (SteamManager.Initialized)
+            {
+                NetworkManager.SetLocalConnectionId(SteamUser.GetSteamID().m_SteamID);
+            }
         }
 
         private void Update()
@@ -209,8 +214,6 @@ namespace FrizzNet.Steam
             SteamNetworkingSockets.CloseConnection(m_ServerConnection, 0, "Client Disconnect", false);
             m_ServerConnection = HSteamNetConnection.Invalid;
             m_ServerConnectionId = 0;
-
-            OnDisconnectedFromServer?.Invoke();
             FrizzLogger.LogInfo("Client disconnected.");
         }
 

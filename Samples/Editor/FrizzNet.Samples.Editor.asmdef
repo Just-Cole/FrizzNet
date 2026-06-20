@@ -1,10 +1,10 @@
 {
-    "name": "FrizzNet.Editor",
-    "rootNamespace": "FrizzNet",
+    "name": "FrizzNet.Samples.Editor",
+    "rootNamespace": "FrizzNet.Samples.Editor",
     "references": [
         "FrizzNet.Runtime",
         "FrizzNet.Samples",
-        "com.rlabrecque.steamworks.net"
+        "FrizzNet.Editor"
     ],
     "includePlatforms": [
         "Editor"

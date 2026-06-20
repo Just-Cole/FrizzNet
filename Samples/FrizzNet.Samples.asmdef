@@ -1,14 +1,12 @@
 {
-    "name": "FrizzNet.Editor",
-    "rootNamespace": "FrizzNet",
+    "name": "FrizzNet.Samples",
+    "rootNamespace": "FrizzNet.Samples",
     "references": [
         "FrizzNet.Runtime",
-        "FrizzNet.Samples",
+        "Unity.InputSystem",
         "com.rlabrecque.steamworks.net"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
