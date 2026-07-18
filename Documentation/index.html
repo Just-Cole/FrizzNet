@@ -2,655 +2,609 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FrizzNet Framework Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FrizzNet Documentation</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="FrizzDocs.css">
     <script>
         function showTab(tabId) {
-            // Hide all tabs
+            const target = document.getElementById(tabId) || document.getElementById('Overview');
+            const tab = target.classList.contains('tab-content') ? target : target.closest('.tab-content');
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            // Deselect all nav links
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-            
-            // Show active tab
-            const activeTab = document.getElementById(tabId);
-            if (activeTab) {
-                activeTab.classList.add('active');
-            }
-            
-            // Highlight nav link
-            const activeLink = document.querySelector(`.nav-link[href="#${tabId}"]`);
-            if (activeLink) {
-                activeLink.classList.add('active');
-            }
-
-            // Scroll content area back to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            tab.classList.add('active');
+            const link = document.querySelector(`.nav-link[href="#${target.id}"]`) ||
+                document.querySelector(`.nav-link[href="#${tab.id}"]`);
+            if (link) link.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'auto' });
         }
 
-        // Sync tab view on hash changes or page load
         function handleHash() {
-            const hash = window.location.hash.substring(1) || 'SetupGuide';
-            showTab(hash);
+            showTab(window.location.hash.substring(1) || 'Overview');
+        }
+
+        function escapeCode(value) {
+            return value
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;');
+        }
+
+        function highlightCSharp(source) {
+            const tokens = /(\/\/.*$|\/\*[\s\S]*?\*\/)|(\$?"(?:\\.|[^"\\])*")|(\b(?:using|namespace|public|private|protected|internal|sealed|abstract|static|readonly|const|class|struct|interface|enum|event|override|virtual|new|return|if|else|foreach|for|while|switch|case|break|continue|try|catch|finally|throw|in|out|ref|this|base|typeof|null|true|false)\b)|(\b(?:void|bool|byte|short|int|long|ulong|float|double|string|var|GameObject|MonoBehaviour|Vector3|Quaternion|MessageWriter|MessageReader|NetworkManager|NetworkBehaviour|NetworkIdentity|FrizzNetworkVariable|FrizzNetworkAnimator|FrizzNetworkSceneManager|FrizzServerManager|FrizzLocalSession|FrizzLobby|FrizzLobbyBrowser|Debug|Mathf)\b)|(\b\d+(?:\.\d+)?f?\b)/gm;
+            let html = '';
+            let cursor = 0;
+            let match;
+
+            while ((match = tokens.exec(source)) !== null) {
+                html += escapeCode(source.slice(cursor, match.index));
+                const className = match[1] ? 'token-comment'
+                    : match[2] ? 'token-string'
+                    : match[3] ? 'token-keyword'
+                    : match[4] ? 'token-type'
+                    : 'token-number';
+                html += `<span class="${className}">${escapeCode(match[0])}</span>`;
+                cursor = tokens.lastIndex;
+            }
+
+            return html + escapeCode(source.slice(cursor));
+        }
+
+        function highlightCodeSamples() {
+            document.querySelectorAll('pre code').forEach(code => {
+                code.classList.add('language-csharp');
+                code.innerHTML = highlightCSharp(code.textContent);
+            });
+        }
+
+        // Propagate each nav link's category color onto its target section
+        // so headings, badges, and cards pick up the matching accent.
+        function applyCategoryAccents() {
+            const categories = ['nav-core', 'nav-transport', 'nav-manager', 'nav-sync', 'nav-spawner'];
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const section = document.getElementById(link.getAttribute('href').substring(1));
+                if (!section) return;
+                const category = categories.find(name => link.classList.contains(name));
+                if (category) section.classList.add(category.replace('nav-', 'cat-'));
+            });
         }
 
         window.addEventListener('hashchange', handleHash);
-        window.addEventListener('DOMContentLoaded', handleHash);
+        window.addEventListener('DOMContentLoaded', () => {
+            applyCategoryAccents();
+            highlightCodeSamples();
+            handleHash();
+        });
     </script>
 </head>
 <body>
-    <div class="layout">
-        <!-- Sidebar Navigation -->
-        <div class="sidebar">
-            <div class="brand">FrizzNet</div>
-            
-            <div class="nav-group-title">Core Integration</div>
-            <ul class="nav-list">
-                <li><a href="#SetupGuide" class="nav-link nav-core">Setup & Architecture</a></li>
-                <li><a href="#NetworkIdentity" class="nav-link nav-core">NetworkIdentity</a></li>
-            </ul>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">FrizzNet</div>
+        <div class="nav-group-title">Start here</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-core" href="#Overview">Overview</a></li>
+            <li><a class="nav-link nav-core" href="#SetupGuide">Setup</a></li>
+            <li><a class="nav-link nav-core" href="#CodeSamples">Code samples</a></li>
+            <li><a class="nav-link nav-core" href="#Authority">Authority</a></li>
+        </ul>
+        <div class="nav-group-title">Core</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-core" href="#NetworkManager">NetworkManager</a></li>
+            <li><a class="nav-link nav-core" href="#NetworkIdentity">NetworkIdentity</a></li>
+            <li><a class="nav-link nav-core" href="#NetworkBehaviour">NetworkBehaviour</a></li>
+            <li><a class="nav-link nav-core" href="#Messaging">Messaging</a></li>
+            <li><a class="nav-link nav-core" href="#FrizzRpc">RPCs & Variables</a></li>
+        </ul>
+        <div class="nav-group-title">Transports & Steam</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-transport" href="#SteamTransport">SteamTransport</a></li>
+            <li><a class="nav-link nav-transport" href="#LocalTransport">LocalTransport</a></li>
+            <li><a class="nav-link nav-transport" href="#FrizzLobby">Lobbies</a></li>
+            <li><a class="nav-link nav-transport" href="#FrizzLocalSession">Local sessions</a></li>
+            <li><a class="nav-link nav-transport" href="#INetworkTransport">Transport contract</a></li>
+        </ul>
+        <div class="nav-group-title">Replication</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-sync" href="#FrizzNetworkTransform">Transform</a></li>
+            <li><a class="nav-link nav-sync" href="#FrizzNetworkAnimator">Animator</a></li>
+            <li><a class="nav-link nav-sync" href="#FrizzNetworkRigidbody">Rigidbody</a></li>
+            <li><a class="nav-link nav-sync" href="#FrizzInterestManager">Interest</a></li>
+        </ul>
+        <div class="nav-group-title">Session systems</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-manager" href="#FrizzServerManager">Server manager</a></li>
+            <li><a class="nav-link nav-manager" href="#FrizzNetworkSceneManager">Scenes</a></li>
+            <li><a class="nav-link nav-manager" href="#FrizzHostMigration">Host migration</a></li>
+            <li><a class="nav-link nav-manager" href="#FrizzVoiceManager">Voice</a></li>
+        </ul>
+        <div class="nav-group-title">Spawning</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-spawner" href="#FrizzPlayerSpawner">Player spawner</a></li>
+            <li><a class="nav-link nav-spawner" href="#FrizzServerSpawner">Server spawner</a></li>
+        </ul>
+    </aside>
 
-            <div class="nav-group-title">Transports</div>
-            <ul class="nav-list">
-                <li><a href="#SteamTransport" class="nav-link nav-transport">SteamTransport</a></li>
-            </ul>
-            
-            <div class="nav-group-title">Managers</div>
-            <ul class="nav-list">
-                <li><a href="#NetworkManager" class="nav-link nav-manager">NetworkManager</a></li>
-                <li><a href="#FrizzServerManager" class="nav-link nav-manager">FrizzServerManager</a></li>
-                <li><a href="#FrizzVoiceManager" class="nav-link nav-manager">FrizzVoiceManager</a></li>
-            </ul>
-
-            <div class="nav-group-title">Synchronizers</div>
-            <ul class="nav-list">
-                <li><a href="#FrizzNetworkTransform" class="nav-link nav-sync">FrizzNetworkTransform</a></li>
-                <li><a href="#FrizzNetworkAnimator" class="nav-link nav-sync">FrizzNetworkAnimator</a></li>
-            </ul>
-
-            <div class="nav-group-title">Spawners</div>
-            <ul class="nav-list">
-                <li><a href="#FrizzPlayerSpawner" class="nav-link nav-spawner">FrizzPlayerSpawner</a></li>
-                <li><a href="#FrizzServerSpawner" class="nav-link nav-spawner">FrizzServerSpawner</a></li>
-            </ul>
-        </div>
-
-        <!-- Main Content Viewports -->
-        <div class="content">
-            
-            <!-- TAB: Setup & Architecture -->
-            <div id="SetupGuide" class="tab-content">
-                <span class="badge">Documentation</span>
-                <h1>FrizzNet Framework Setup</h1>
-                <p class="lead">A lightweight, connection-oriented Steam multiplayer framework for Unity 6+. Utilizing Steamworks.NET and Steam Networking Sockets for NAT-punching P2P gameplay.</p>
-                
-                <div class="card">
-                    <div class="card-title">🚀 Core Requirements</div>
-                    <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
-                        <li style="margin-bottom: 0.5rem;"><strong>Unity 6+</strong> (or modern LTS versions).</li>
-                        <li style="margin-bottom: 0.5rem;"><strong>Steam Client</strong> running and logged into an active account.</li>
-                        <li style="margin-bottom: 0.5rem;"><strong>Steamworks.NET</strong> package installed in your Unity project.</li>
-                        <li>A <code>steam_appid.txt</code> file in your project root containing your AppID (default test AppID is <code>480</code>).</li>
-                    </ul>
+    <main class="content">
+        <section id="Overview" class="tab-content">
+            <div class="hero">
+                <span class="badge">Unity 6+ networking</span>
+                <h1 class="hero-title">Frizz<span>Net</span></h1>
+                <p class="lead">Steam P2P and local TCP networking with binary messages, replicated objects, synchronization components, lobbies, and Steam voice.</p>
+                <div class="hero-actions">
+                    <a class="btn btn-primary" href="#SetupGuide">Get started</a>
+                    <a class="btn" href="#CodeSamples">Browse code samples</a>
+                    <a class="btn" href="#Authority">Read the authority model</a>
                 </div>
-
-                <div class="card">
-                    <div class="card-title">⚙️ Fast Setup Steps</div>
-                    <ol style="padding-left: 1.5rem; margin-top: 0.5rem;">
-                        <li style="margin-bottom: 0.5rem;">Create a persistent GameObject in your starting scene named <code>NetworkManager</code>.</li>
-                        <li style="margin-bottom: 0.5rem;">Attach both the <code>NetworkManager</code> and <code>SteamTransport</code> scripts.</li>
-                        <li style="margin-bottom: 0.5rem;">Assign the <code>SteamTransport</code> reference to the <strong>Transport Component</strong> slot.</li>
-                        <li>Drag your player prefab (decorated with <code>NetworkIdentity</code>) into the <strong>Spawnable Prefabs</strong> registry list.</li>
-                    </ol>
+                <div class="hero-stats">
+                    <div class="stat"><div class="stat-value">2</div><div class="stat-label">Transports</div></div>
+                    <div class="stat"><div class="stat-value">7</div><div class="stat-label">SyncVar types</div></div>
+                    <div class="stat"><div class="stat-value">10</div><div class="stat-label">System channels</div></div>
+                    <div class="stat"><div class="stat-value">3</div><div class="stat-label">Samples</div></div>
                 </div>
             </div>
+            <div class="grid">
+                <div class="card feature accent-transport"><div class="feature-icon">🎮</div><h2>Steam</h2><p>Lobbies, invites, browsing, NAT traversal, owner changes, and voice through Steamworks.NET.</p></div>
+                <div class="card feature accent-core"><div class="feature-icon">🔌</div><h2>Local TCP</h2><p>Fast same-machine and LAN testing through the same gameplay-facing manager APIs.</p></div>
+                <div class="card feature accent-sync"><div class="feature-icon">📡</div><h2>Replication</h2><p>Host spawning plus owner-authored transform, Animator, Rigidbody, RPC, and variable helpers.</p></div>
+                <div class="card feature accent-spawner"><div class="feature-icon">🛠️</div><h2>Editor tools</h2><p>Inspector help, runtime monitoring, demo setup, and sample prefab generation under <code>Tools &gt; FrizzNet</code>.</p></div>
+            </div>
+            <div class="alert warning"><div class="alert-title">Production boundary</div><p>The host must validate client messages and owner-authored state. Built-in late join, interest management, passwords, and host migration are intentionally limited; each section states the exact behavior.</p></div>
+        </section>
 
-            <!-- TAB: NetworkManager -->
-            <div id="NetworkManager" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>NetworkManager</h1>
-                <p class="lead">Manages player lists, replicates system events (spawn, destroy, transforms, voice), and routes custom developer packet handlers.</p>
-
-                <div class="card">
-                    <div class="card-title">Properties & Methods</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Method / Variable</th>
-                                <th>Type</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>Instance</code></td>
-                                <td>Static Getter</td>
-                                <td>Retrieve the active NetworkManager singleton instance.</td>
-                            </tr>
-                            <tr>
-                                <td><code>IsHost</code></td>
-                                <td>bool</td>
-                                <td>True if this client is acting as the host/server.</td>
-                            </tr>
-                            <tr>
-                                <td><code>IsClient</code></td>
-                                <td>bool</td>
-                                <td>True if this client is connected to a remote host.</td>
-                            </tr>
-                            <tr>
-                                <td><code>RegisterHandler(id, callback)</code></td>
-                                <td>void</td>
-                                <td>Registers a custom packet reader callback for a specific message ID.</td>
-                            </tr>
-                            <tr>
-                                <td><code>Spawn(prefab, pos, rot, ownerId)</code></td>
-                                <td>GameObject</td>
-                                <td>Instantiates a registered prefab across all connected clients (Host only).</td>
-                            </tr>
-                            <tr>
-                                <td><code>Despawn(obj)</code></td>
-                                <td>void</td>
-                                <td>Destroys a networked GameObject across all clients (Host only).</td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <section id="SetupGuide" class="tab-content">
+            <span class="badge">Getting started</span>
+            <h1>Setup</h1>
+            <p class="lead">Create one persistent manager, select one transport, and register matching prefabs on every peer.</p>
+            <div class="card">
+                <h2>Shared setup</h2>
+                <div class="steps">
+                    <div class="step"><div class="step-number">1</div><p>Add <code>NetworkManager</code> to a startup-scene GameObject.</p></div>
+                    <div class="step"><div class="step-number">2</div><p>Add exactly one enabled transport: <code>SteamTransport</code> or <code>LocalTransport</code>.</p></div>
+                    <div class="step"><div class="step-number">3</div><p>Assign it to <strong>Transport Component</strong>.</p></div>
+                    <div class="step"><div class="step-number">4</div><p>Add every dynamic prefab to <strong>Spawnable Prefabs</strong> on every build.</p></div>
+                    <div class="step"><div class="step-number">5</div><p>Add <code>NetworkIdentity</code> and required synchronization components to those prefabs.</p></div>
                 </div>
+            </div>
+            <div class="card"><h2>Requirements</h2><p>FrizzNet targets Unity 6+ and its runtime assembly references Steamworks.NET. Steam play additionally requires a running Steam client and valid App ID. The included <code>SteamManager</code> currently uses App ID <code>480</code> in code and must be updated before release.</p></div>
+            <div class="card">
+                <h2>Steam session</h2>
+                <pre><code>using FrizzNet.Core;
+using Steamworks;
 
-                <div class="card">
-                    <div class="card-title">Inspector Configurations</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Option / Variable</th>
-                                <th>Default</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>Dont Destroy On Load</code></td>
-                                <td><code>true</code></td>
-                                <td>If enabled, persists the NetworkManager GameObject across scene loads.</td>
-                            </tr>
-                            <tr>
-                                <td><code>Run In Background</code></td>
-                                <td><code>true</code></td>
-                                <td>Keeps the game execution running when the application window loses focus. Crucial for local multi-client testing.</td>
-                            </tr>
-                            <tr>
-                                <td><code>Max Players</code></td>
-                                <td><code>4</code></td>
-                                <td>The default player slot limit set when creating Steam matchmaking lobbies.</td>
-                            </tr>
-                            <tr>
-                                <td><code>Log Level</code></td>
-                                <td><code>FrizzLogLevel.Info</code></td>
-                                <td>Filters framework console logging outputs (None, Errors, Warnings, Info, Verbose).</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+FrizzServerManager.Instance.MaxPlayers = 8;
+FrizzServerManager.Instance.LobbyName = "Co-op Session";
+FrizzServerManager.Instance.LobbyType = ELobbyType.k_ELobbyTypePublic;
+FrizzServerManager.Instance.StartServer();</code></pre>
+            </div>
+            <div class="card">
+                <h2>Local TCP session</h2>
+                <pre><code>using FrizzNet.Transport;
 
-                <div class="card">
-                    <div class="card-title">💻 Code Example: Messaging</div>
-                    <pre><code>// Send data from Client to Server
-using (MessageWriter writer = new MessageWriter())
+// Host instance
+FrizzLocalSession.Host(port: 7777, maxPlayers: 8);
+
+// Client instance
+FrizzLocalSession.Join("127.0.0.1:7777");</code></pre>
+            </div>
+        </section>
+
+        <section id="CodeSamples" class="tab-content">
+            <span class="badge">Copy-ready examples</span>
+            <h1>Code Samples</h1>
+            <p class="lead">Practical examples for the most common FrizzNet workflows.</p>
+
+            <div class="card">
+                <h2>Custom message component</h2>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
+using UnityEngine;
+
+public sealed class NetworkChat : MonoBehaviour
 {
-    writer.WriteString("Custom message content!");
-    NetworkManager.Instance.SendToServer(MyMessageId, writer, true);
-}
+    private const short ChatRequestId = 101;
+    private const short ChatResultId = 102;
 
-// Receive and read incoming data
-void Start()
-{
-    NetworkManager.Instance.RegisterHandler(MyMessageId, OnDataReceived);
-}
-
-void OnDataReceived(ulong senderId, MessageReader reader)
-{
-    string msgText = reader.ReadString();
-    Debug.Log($"Received text: {msgText} from {senderId}");
-}</code></pre>
-                </div>
-            </div>
-
-            <!-- TAB: SteamTransport -->
-            <div id="SteamTransport" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>SteamTransport</h1>
-                <p class="lead">P2P Transport implementation using raw Steam Networking Sockets. Manages listen sockets, remote socket handles, and matchmaking lobby lifecycle callbacks.</p>
-
-                <div class="card">
-                    <div class="card-title">⚙️ Inspector Fields</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Field Name</th>
-                                <th>Type</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>m_VirtualPort</code></td>
-                                <td>int (Default: <code>0</code>)</td>
-                                <td>The virtual port channel assigned for Steam socket connections.</td>
-                            </tr>
-                            <tr>
-                                <td><code>m_AutoConnectToLobbyOwner</code></td>
-                                <td>bool (Default: <code>true</code>)</td>
-                                <td>Auto-starts server listen sockets or client connection attempts on lobby status shifts.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="alert">
-                    <div class="alert-title">Host Migration</div>
-                    <p>FrizzNet transport hooks into lobby owner change callbacks. If the lobby owner leaves, Steam elects a new owner. If the local client is promoted, they automatically launch their hosting socket loop, and other clients reconnect to the new host without disconnecting from the lobby.</p>
-                </div>
-            </div>
-
-            <!-- TAB: NetworkIdentity -->
-            <div id="NetworkIdentity" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>NetworkIdentity</h1>
-                <p class="lead">Identifies GameObjects uniquely across the network. Tracks connection credentials, local authority, and player association.</p>
-
-                <div class="card">
-                    <div class="card-title">Properties</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Property</th>
-                                <th>Type</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>NetworkId</code></td>
-                                <td>ulong</td>
-                                <td>Unique network ID mapped dynamically by the NetworkManager.</td>
-                            </tr>
-                            <tr>
-                                <td><code>OwnerConnectionId</code></td>
-                                <td>ulong</td>
-                                <td>The SteamID64 of the client who owns and controls this object.</td>
-                            </tr>
-                            <tr>
-                                <td><code>HasAuthority</code></td>
-                                <td>bool</td>
-                                <td>True if the local player has authority and writes updates to this object.</td>
-                            </tr>
-                            <tr>
-                                <td><code>IsLocalPlayer</code></td>
-                                <td>bool</td>
-                                <td>True if this GameObject represents the local player's avatar.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">💻 Code Example: Authority Check</div>
-                    <pre><code>void Update()
-{
-    // Block input and movements if the local player does not own this clone
-    if (!GetComponent&lt;NetworkIdentity&gt;().HasAuthority) return;
-
-    float inputY = Input.GetAxis("Vertical");
-    transform.Translate(0, 0, inputY * Time.deltaTime * 4f);
-}</code></pre>
-                </div>
-            </div>
-
-            <!-- TAB: FrizzNetworkTransform -->
-            <div id="FrizzNetworkTransform" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>FrizzNetworkTransform</h1>
-                <p class="lead">Replicates position and rotation variables. Compares movement thresholds and smoothly interpolates (lerps) remote positions to eliminate visual lag.</p>
-
-                <div class="card">
-                    <div class="card-title">Tuning Properties</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Field</th>
-                                <th>Default</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>m_SendRate</code></td>
-                                <td><code>20</code> updates/sec</td>
-                                <td>Frequency of update dispatches sent by the authoritative owner.</td>
-                            </tr>
-                            <tr>
-                                <td><code>m_PositionThreshold</code></td>
-                                <td><code>0.01</code> units</td>
-                                <td>Minimum distance movement required to trigger a coordinate update packet.</td>
-                            </tr>
-                            <tr>
-                                <td><code>m_RotationThreshold</code></td>
-                                <td><code>0.5</code> degrees</td>
-                                <td>Minimum angular shift required to trigger a rotation update packet.</td>
-                            </tr>
-                            <tr>
-                                <td><code>m_LerpSpeed</code></td>
-                                <td><code>15.0</code></td>
-                                <td>Velocity of the smoothing interpolation on remote clients.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB: FrizzVoiceManager -->
-            <div id="FrizzVoiceManager" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>FrizzVoiceManager</h1>
-                <p class="lead">Enables real-time, spatialized or global voice chat using Steam's high-fidelity compression codecs. Automatically manages recording and speaker allocation.</p>
-
-                <div class="card">
-                    <div class="card-title">Settings Configurations</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Setting Variable</th>
-                                <th>Default</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>EnableVoice</code></td>
-                                <td><code>true</code></td>
-                                <td>Toggles the entire voice manager recording and processing loop.</td>
-                            </tr>
-                            <tr>
-                                <td><code>UsePushToTalk</code></td>
-                                <td><code>true</code></td>
-                                <td>If true, microphone only records while holding the designated talk key.</td>
-                            </tr>
-                            <tr>
-                                <td><code>PushToTalkKey</code></td>
-                                <td><code>KeyCode.V</code></td>
-                                <td>Keyboard key mapped to trigger Push-To-Talk capture.</td>
-                            </tr>
-                            <tr>
-                                <td><code>SpatialAudio</code></td>
-                                <td><code>true</code></td>
-                                <td>Positions speaking voices relative to their matching player object in 3D space.</td>
-                            </tr>
-                            <tr>
-                                <td><code>MaxAudioDistance</code></td>
-                                <td><code>35.0</code> units</td>
-                                <td>The logarithmic rolloff cutoff distance for spatial voice sources.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="alert">
-                    <div class="alert-title">Implementation Plans & Architecture</div>
-                    <p>FrizzVoiceManager uses <code>SteamUser.StartVoiceRecording</code> to capture local mic input unmanaged. Compressed bytes are polled and sent unreliably to the server inside P2P sockets, which are routed to client speakers. Clients decode raw bytes back into PCM using <code>SteamUser.DecompressVoice</code> and feed a procedural circular <code>AudioClip</code> stream.</p>
-                </div>
-            </div>
-
-            <!-- TAB: FrizzPlayerSpawner -->
-            <div id="FrizzPlayerSpawner" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>FrizzPlayerSpawner</h1>
-                <p class="lead">Manages player character spawning across the network. Supports multiple spawn point selection modes (Random/RoundRobin), automated connection hooks, and spawn area collision/overlap checking.</p>
-
-                <div class="card">
-                    <div class="card-title">Settings Configurations</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Setting Variable</th>
-                                <th>Default</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>PlayerPrefab</code></td>
-                                <td><code>None (GameObject)</code></td>
-                                <td>The player prefab to spawn across the network. Must have a NetworkIdentity component.</td>
-                            </tr>
-                            <tr>
-                                <td><code>SpawnPoints</code></td>
-                                <td><code>Empty List</code></td>
-                                <td>A list of Transforms representing valid spawn locations.</td>
-                            </tr>
-                            <tr>
-                                <td><code>SpawnMode</code></td>
-                                <td><code>SpawnSelectionMode.Random</code></td>
-                                <td>How spawn points are chosen (Random vs. RoundRobin).</td>
-                            </tr>
-                            <tr>
-                                <td><code>AutoSpawn</code></td>
-                                <td><code>true</code></td>
-                                <td>If true, automatically hooks client connection and lobby join events to spawn players.</td>
-                            </tr>
-                            <tr>
-                                <td><code>AvoidOccupiedSpawnPoints</code></td>
-                                <td><code>true</code></td>
-                                <td>If true, checks if a spawn point is occupied by physics objects before placing a player.</td>
-                            </tr>
-                            <tr>
-                                <td><code>OccupationCheckRadius</code></td>
-                                <td><code>1.5</code> units</td>
-                                <td>The radius of the overlap checking sphere around the spawn point.</td>
-                            </tr>
-                            <tr>
-                                <td><code>OccupiedLayerMask</code></td>
-                                <td><code>~0 (Everything)</code></td>
-                                <td>The physics layers checked for obstacles when spawning.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">💻 Code Example: Manual Spawning</div>
-                    <pre><code>// Turn off AutoSpawn in the inspector, then manage spawns in C#
-public class CustomGameManager : MonoBehaviour
-{
-    [SerializeField] private FrizzPlayerSpawner m_Spawner;
-
-    private void Start()
+    private void OnEnable()
     {
-        // Subscribe to game start event and manually spawn the host player
-        if (NetworkManager.Instance.IsHost)
+        NetworkManager.Instance.RegisterHandler(ChatRequestId, HandleChatRequest);
+        NetworkManager.Instance.RegisterHandler(ChatResultId, HandleChatResult);
+    }
+
+    private void OnDisable()
+    {
+        if (NetworkManager.Instance == null)
         {
-            ulong mySteamId = SteamUser.GetSteamID().m_SteamID;
-            m_Spawner.SpawnPlayer(mySteamId);
+            return;
+        }
+
+        NetworkManager.Instance.UnregisterHandler(ChatRequestId);
+        NetworkManager.Instance.UnregisterHandler(ChatResultId);
+    }
+
+    public void Send(string text)
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsClient)
+        {
+            return;
+        }
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteString(text);
+            NetworkManager.Instance.SendToServer(ChatRequestId, writer, true);
+        }
+    }
+
+    private void HandleChatRequest(ulong senderId, MessageReader reader)
+    {
+        if (!NetworkManager.Instance.IsHost)
+        {
+            return;
+        }
+
+        string text = reader.ReadString();
+        if (string.IsNullOrWhiteSpace(text) || text.Length &gt; 256)
+        {
+            return;
+        }
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteLong((long)senderId);
+            writer.WriteString(text);
+            NetworkManager.Instance.SendToAll(ChatResultId, writer, true);
+        }
+    }
+
+    private void HandleChatResult(ulong senderId, MessageReader reader)
+    {
+        ulong authorId = (ulong)reader.ReadLong();
+        string text = reader.ReadString();
+        Debug.Log($"[{authorId}] {text}");
+    }
+}</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>Host spawning and despawning</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class HostSpawnExample : MonoBehaviour
+{
+    [SerializeField] private GameObject _prefab;
+    private GameObject _instance;
+
+    public void SpawnForClient(ulong ownerConnectionId)
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
+        {
+            return;
+        }
+
+        _instance = NetworkManager.Instance.Spawn(
+            _prefab,
+            transform.position,
+            transform.rotation,
+            ownerConnectionId);
+    }
+
+    public void Despawn()
+    {
+        if (_instance != null &amp;&amp; NetworkManager.Instance.IsHost)
+        {
+            NetworkManager.Instance.Despawn(_instance);
+            _instance = null;
         }
     }
 }</code></pre>
-                </div>
             </div>
 
-            <!-- TAB: FrizzNetworkAnimator -->
-            <div id="FrizzNetworkAnimator" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>FrizzNetworkAnimator</h1>
-                <p class="lead">Synchronizes Unity Animator variables (floats, ints, bools) and trigger states smoothly across all connected clients. Caches parameters for minimal latency overhead.</p>
+            <div class="card">
+                <h2>NetworkBehaviour with a SyncVar</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
 
-                <div class="card">
-                    <div class="card-title">Tuning Properties</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Field Name</th>
-                                <th>Default</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>TargetAnimator</code></td>
-                                <td><code>None (Animator)</code></td>
-                                <td>The Animator component to synchronize. If unassigned, automatically queries the local GameObject.</td>
-                            </tr>
-                            <tr>
-                                <td><code>SendRate</code></td>
-                                <td><code>20</code> updates/sec</td>
-                                <td>Frequency of variable polling and network updates sent by the authoritative client.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">💻 Code Example: Triggers synchronization</div>
-                    <pre><code>// Instead of triggering directly on Unity's Animator, call SetTrigger on FrizzNetworkAnimator
-public class PlayerAnimationController : MonoBehaviour
+public sealed class NetworkHealth : NetworkBehaviour
 {
-    [SerializeField] private FrizzNetworkAnimator m_NetAnimator;
+    private const short HealthSyncId = 1;
+    private readonly FrizzNetworkVariable&lt;int&gt; _health =
+        new FrizzNetworkVariable&lt;int&gt;(100);
 
-    void Update()
+    public int Health =&gt; _health.Value;
+
+    public override void OnNetworkSpawn()
     {
-        if (!GetComponent&lt;NetworkIdentity&gt;().HasAuthority) return;
+        RegisterSyncVar(HealthSyncId, _health);
+        _health.OnValueChanged += HandleHealthChanged;
+    }
 
-        if (Input.GetKeyDown(KeyCode.Space))
+    public override void OnNetworkDespawn()
+    {
+        _health.OnValueChanged -= HandleHealthChanged;
+    }
+
+    public void ApplyDamage(int amount)
+    {
+        if (!IsServer || amount &lt;= 0)
         {
-            // This will set the trigger locally and synchronize it instantly over the P2P network
-            m_NetAnimator.SetTrigger("Jump");
+            return;
+        }
+
+        _health.Value = Mathf.Max(0, _health.Value - amount);
+    }
+
+    private void HandleHealthChanged(int previous, int current)
+    {
+        Debug.Log($"Health: {previous} -&gt; {current}");
+    }
+}</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>Replicated Animator trigger</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class NetworkAnimationExample : NetworkBehaviour
+{
+    [SerializeField] private FrizzNetworkAnimator _networkAnimator;
+
+    public void Jump()
+    {
+        if (HasAuthority &amp;&amp; _networkAnimator != null)
+        {
+            _networkAnimator.SetTrigger("Jump");
         }
     }
 }</code></pre>
-                </div>
             </div>
 
-            <!-- TAB: FrizzServerSpawner -->
-            <div id="FrizzServerSpawner" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>FrizzServerSpawner</h1>
-                <p class="lead">Automates the instantiation and registration of server-owned networked GameObjects (such as NPCs, obstacles, or interactable items) when the lobby is established.</p>
+            <div class="card">
+                <h2>Host scene transition</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
 
-                <div class="card">
-                    <div class="card-title">Tuning Properties</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Field Name</th>
-                                <th>Default</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>SpawnItems</code></td>
-                                <td><code>Empty List</code></td>
-                                <td>List of prefabs (with <code>NetworkIdentity</code>) and their target spawn locations.</td>
-                            </tr>
-                            <tr>
-                                <td><code>SpawnOnLobbyJoin</code></td>
-                                <td><code>true</code></td>
-                                <td>Automatically triggers spawning of registered items when joining the lobby as Host.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="alert">
-                    <div class="alert-title">Server Authority</div>
-                    <p>All items spawned via <code>FrizzServerSpawner</code> are instantiated as server-owned objects (OwnerConnectionId = 0). These items persist across client sessions as long as the host maintains the lobby connection.</p>
-                </div>
-            </div>
-
-            <!-- TAB: FrizzServerManager -->
-            <div id="FrizzServerManager" class="tab-content">
-                <span class="badge">API Reference</span>
-                <h1>FrizzServerManager</h1>
-                <p class="lead">Manages hosting parameters, lobby types, matchmaking names, passwords, and authoritative client player kicking.</p>
-
-                <div class="card">
-                    <div class="card-title">Properties & Methods</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Method / Variable</th>
-                                <th>Type</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>Instance</code></td>
-                                <td>Static Getter</td>
-                                <td>Retrieves the active FrizzServerManager singleton instance.</td>
-                            </tr>
-                            <tr>
-                                <td><code>MaxPlayers</code></td>
-                                <td>int</td>
-                                <td>The maximum connection capacity limit for Steam matchmaking lobbies (2-64).</td>
-                            </tr>
-                            <tr>
-                                <td><code>LobbyType</code></td>
-                                <td>ELobbyType</td>
-                                <td>Accessibility of the Steam matchmaking lobby (Public, FriendsOnly, Private).</td>
-                            </tr>
-                            <tr>
-                                <td><code>LobbyName</code></td>
-                                <td>string</td>
-                                <td>Public display name assigned to the lobby metadata.</td>
-                            </tr>
-                            <tr>
-                                <td><code>LobbyPassword</code></td>
-                                <td>string</td>
-                                <td>Optional passcode required to connect to the session.</td>
-                            </tr>
-                            <tr>
-                                <td><code>StartServer()</code></td>
-                                <td>void</td>
-                                <td>Authoritatively starts hosting a new session and requests lobby creation.</td>
-                            </tr>
-                            <tr>
-                                <td><code>StopServer()</code></td>
-                                <td>void</td>
-                                <td>Tears down the hosting socket and leaves the Steam lobby.</td>
-                            </tr>
-                            <tr>
-                                <td><code>KickPlayer(steamId)</code></td>
-                                <td>bool</td>
-                                <td>Authoritatively disconnects a client connection (Host only). Returns true if successful.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">💻 Code Example: Session Control</div>
-                    <pre><code>// Starting a server dynamically with custom parameters
-public void HostCustomMatch()
+public sealed class NetworkSceneExample : MonoBehaviour
 {
-    FrizzServerManager.Instance.LobbyName = "Epic Battle Arena";
-    FrizzServerManager.Instance.MaxPlayers = 8;
-    FrizzServerManager.Instance.LobbyType = Steamworks.ELobbyType.k_ELobbyTypePublic;
-    FrizzServerManager.Instance.LobbyPassword = "123"; // Optional passcode
-    
-    FrizzServerManager.Instance.StartServer();
-}
-
-// Authoritative player kick routine
-public void KickObnoxiousPlayer(ulong offenderSteamId)
-{
-    if (FrizzServerManager.Instance.KickPlayer(offenderSteamId))
+    public void LoadGame()
     {
-        Debug.Log($"Successfully kicked client: {offenderSteamId}");
+        if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.IsHost)
+        {
+            FrizzNetworkSceneManager.Instance.LoadScene("GameScene");
+        }
     }
 }</code></pre>
-                </div>
             </div>
+        </section>
 
-            <!-- Global Footer -->
-            <footer>FrizzNet Documentation • Local Reference Site</footer>
-        </div>
-    </div>
+        <section id="Authority" class="tab-content">
+            <span class="badge">Architecture</span>
+            <h1>Authority</h1>
+            <p class="lead">The host owns session flow and object lifetime. Game code owns validation.</p>
+            <div class="card"><h2>Framework-enforced</h2><ul><li>Host-only spawn and despawn</li><li>Host-only network scene initiation</li><li>Local authority flags derived from object ownership</li></ul></div>
+            <div class="card"><h2>You must validate</h2><ul><li>Sender ownership and permissions</li><li>Movement, physics, cooldowns, inventory, and damage</li><li>Payload length, range, frequency, and session phase</li><li>Admission, kicking, and reconnect policy</li></ul></div>
+            <div class="alert danger"><div class="alert-title">Do not trust client payload identity</div><p>Use the handler's transport <code>senderId</code>. Client RPCs, variable writes, and synchronization packets are not a complete anti-cheat boundary.</p></div>
+        </section>
+
+        <section id="NetworkManager" class="tab-content">
+            <span class="badge">Core API</span><h1>NetworkManager</h1>
+            <p class="lead">Coordinates the active transport, handlers, connections, prefab registry, and spawned objects.</p>
+            <div class="card"><h2>State</h2><table><tr><th>Member</th><th>Meaning</th></tr><tr><td><code>Instance</code></td><td>Active singleton.</td></tr><tr><td><code>LocalConnectionId</code></td><td>Identity supplied by the transport.</td></tr><tr><td><code>IsHost / IsClient</code></td><td>Current transport role.</td></tr><tr><td><code>ConnectedClients</code></td><td>Remote clients tracked by the host.</td></tr><tr><td><code>NetworkObjects</code></td><td>Spawned identities keyed by network ID.</td></tr></table></div>
+            <div class="card"><h2>Main methods</h2><table><tr><th>Method</th><th>Use</th></tr><tr><td><code>RegisterHandler / UnregisterHandler</code></td><td>Manage one custom handler per message ID.</td></tr><tr><td><code>SendToServer</code></td><td>Client to host.</td></tr><tr><td><code>SendToClient / SendToAll</code></td><td>Host to remote clients.</td></tr><tr><td><code>RegisterSpawnablePrefab</code></td><td>Add a uniquely named prefab at runtime.</td></tr><tr><td><code>Spawn / Despawn</code></td><td>Host-only object lifetime.</td></tr></table></div>
+            <div class="alert warning"><div class="alert-title">Late join</div><p>Existing objects replicate prefab, ID, position, rotation, and owner only. Send current scale, variables, scene, physics, Animator, and game state separately.</p></div>
+        </section>
+
+        <section id="NetworkIdentity" class="tab-content">
+            <span class="badge">Core API</span><h1>NetworkIdentity</h1>
+            <p class="lead">Assigns a stable runtime network ID, owner connection, prefab name, and local authority state.</p>
+            <div class="card"><table><tr><th>Member</th><th>Meaning</th></tr><tr><td><code>NetworkId</code></td><td>Host-assigned object ID.</td></tr><tr><td><code>OwnerConnectionId</code></td><td>Owning connection; <code>0</code> is host-owned.</td></tr><tr><td><code>PrefabAssetName</code></td><td>Name used for spawn and migration reconstruction.</td></tr><tr><td><code>HasAuthority</code></td><td>Local object-control flag.</td></tr><tr><td><code>IsLocalPlayer</code></td><td>Current implementation marks locally owned objects; do not use as unique-avatar proof.</td></tr></table></div>
+            <div class="alert"><div class="alert-title">Prefab rule</div><p>Every peer must register a prefab with the same unique GameObject name before a spawn packet arrives.</p></div>
+        </section>
+
+        <section id="NetworkBehaviour" class="tab-content">
+            <span class="badge">Core API</span><h1>NetworkBehaviour</h1>
+            <p class="lead">Base class for identity access, authority helpers, lifecycle, RPC registration, and network variables.</p>
+            <div class="card"><h2>Lifecycle</h2><p><code>OnNetworkSpawn</code>, <code>OnNetworkDespawn</code>, <code>OnStartAuthority</code>, <code>OnStopAuthority</code>, and <code>OnStartLocalPlayer</code>.</p></div>
+            <div class="card"><h2>Helpers</h2><p><code>NetworkIdentity</code>, <code>NetworkId</code>, <code>HasAuthority</code>, <code>IsLocalPlayer</code>, <code>IsServer</code>, and <code>IsClient</code>.</p></div>
+        </section>
+
+        <section id="Messaging" class="tab-content">
+            <span class="badge">Core API</span><h1>Messaging</h1>
+            <p class="lead">Managed binary serialization routed by a signed 16-bit message ID.</p>
+            <div class="card"><h2>Rules</h2><ul><li>Use positive IDs for game messages; negative IDs are reserved.</li><li>Serialization is positional and must be read in the same order.</li><li>Dispose readers and writers.</li><li>Unregister handlers when their owner disables.</li><li>Validate before relaying.</li></ul></div>
+            <pre><code>using (MessageWriter writer = new MessageWriter())
+{
+    writer.WriteString(text);
+    NetworkManager.Instance.SendToServer(ChatMessageId, writer, true);
+}</code></pre>
+        </section>
+
+        <section id="FrizzRpc" class="tab-content">
+            <span class="badge">State API</span><h1>RPCs &amp; Network Variables</h1>
+            <p class="lead">Reliable typed calls and delta replication for supported primitive state.</p>
+            <div class="card"><h2>RPCs</h2><p>Call <code>RegisterRpcHandlers()</code> from <code>OnNetworkSpawn</code>. Supported parameters: int, float, bool, string, long, ulong, Vector3, and Quaternion.</p></div>
+            <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
+
+public sealed class NetworkScore : NetworkBehaviour
+{
+    private const short AddScoreRpc = 1;
+    private int _score;
+
+    public override void OnNetworkSpawn()
+    {
+        RegisterRpcHandlers();
+    }
+
+    public void RequestScore(int amount)
+    {
+        if (!HasAuthority || amount &lt;= 0)
+        {
+            return;
+        }
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteInt(amount);
+            SendServerRpc(AddScoreRpc, writer);
+        }
+    }
+
+    [FrizzRpc(AddScoreRpc, FrizzRpcTarget.Server)]
+    private void HandleAddScore(int amount)
+    {
+        if (IsServer &amp;&amp; amount &gt; 0 &amp;&amp; amount &lt;= 100)
+        {
+            _score += amount;
+        }
+    }
+}</code></pre>
+            <div class="card" id="FrizzNetworkVariable"><h2>FrizzNetworkVariable&lt;T&gt;</h2><p>Register each variable with a stable sync ID. Supported values: int, float, bool, string, long, ulong, and Vector3.</p></div>
+            <div class="alert danger"><div class="alert-title">Current dispatch limits</div><p>RPC packets dispatch to the first <code>NetworkBehaviour</code> on an object. Variable and RPC client writes require host-side validation. Neither system supplies current values to late joiners.</p></div>
+        </section>
+
+        <section id="SteamTransport" class="tab-content">
+            <span class="badge">Transport</span><h1>SteamTransport</h1>
+            <p class="lead">Steam Networking Sockets P2P transport integrated with lobby ownership and membership callbacks.</p>
+            <div class="card"><h2>Inspector</h2><p><strong>Virtual Port</strong> selects the Steam socket channel. <strong>Auto Connect To Lobby Owner</strong> starts hosting for the lobby owner and connects other members.</p></div>
+            <div class="alert warning"><div class="alert-title">Capacity and admission</div><p>The transport does not fully enforce lobby membership or capacity on every incoming socket. Validate admission in session code. Connectivity migration does not restore gameplay state.</p></div>
+        </section>
+
+        <section id="LocalTransport" class="tab-content">
+            <span class="badge">Transport</span><h1>LocalTransport</h1>
+            <p class="lead">Length-prefixed TCP transport for same-machine and LAN development.</p>
+            <div class="card"><table><tr><th>Method</th><th>Use</th></tr><tr><td><code>StartHost(address, port, maxPlayers)</code></td><td>Start a local listener.</td></tr><tr><td><code>StartClient(address, port)</code></td><td>Connect to a host.</td></tr><tr><td><code>StopHost / Disconnect</code></td><td>End the role.</td></tr><tr><td><code>DisconnectClient</code></td><td>Host disconnects one remote client.</td></tr></table></div>
+            <div class="alert"><div class="alert-title">TCP behavior</div><p>The reliable flag is ignored because TCP is reliable. Maximum framed packet size is 1 MiB. Local sessions do not provide Steam lobbies, voice, or owner-based migration.</p></div>
+        </section>
+
+        <section id="FrizzLobby" class="tab-content">
+            <span class="badge">Steam API</span><h1>FrizzLobby &amp; Browser</h1>
+            <p class="lead">Create, join, leave, invite, inspect members, manage metadata, and browse public lobbies.</p>
+            <div class="card"><p><code>Create</code>, <code>Join</code>, <code>Leave</code>, <code>InviteFriends</code>, <code>InviteUser</code>, <code>GetOwner</code>, <code>GetMembers</code>, and metadata/ready-state helpers.</p></div>
+            <pre><code>using FrizzNet.Steam;
+using Steamworks;
+using UnityEngine;
+
+// Host
+FrizzLobby.Create(8, ELobbyType.k_ELobbyTypePublic);
+
+// Join by Steam lobby ID
+FrizzLobby.Join(lobbyId);
+
+// Open the Steam invite overlay
+FrizzLobby.InviteFriends();
+
+// Browse public lobbies
+FrizzLobbyBrowser.RequestLobbyList(
+    results =&gt; Debug.Log($"Found {results.Count} lobbies."),
+    error =&gt; Debug.LogError(error),
+    maxResults: 50);</code></pre>
+            <div class="card" id="FrizzLobbyBrowser"><h2>FrizzLobbyBrowser</h2><p><code>RequestLobbyList</code> asynchronously returns <code>FrizzLobbyInfo</code> entries. Keep only one request active.</p></div>
+            <div class="alert danger"><div class="alert-title">Passwords are not authentication</div><p>The current lobby password is visible metadata checked client-side. Kicking closes a socket but does not create a ban or prevent reconnect.</p></div>
+        </section>
+
+        <section id="FrizzLocalSession" class="tab-content">
+            <span class="badge">Local API</span><h1>FrizzLocalSession</h1>
+            <p class="lead">Convenience API for local host, join, leave, and session status.</p>
+            <pre><code>FrizzLocalSession.Host(7777, 8);
+FrizzLocalSession.Join("127.0.0.1:7777");
+FrizzLocalSession.Leave();</code></pre>
+            <div class="card"><p>Addresses may be a port, <code>host:port</code>, or localhost. The convenience host binds to <code>127.0.0.1</code>. Use <code>NetworkManager</code> connection events for gameplay lifecycle.</p></div>
+        </section>
+
+        <section id="INetworkTransport" class="tab-content">
+            <span class="badge">Transport contract</span><h1>INetworkTransport</h1>
+            <p class="lead">Contract implemented by Steam and local TCP transports.</p>
+            <div class="card"><h2>Responsibilities</h2><p>Role state, host/client startup and shutdown, per-client connections, send operations, disconnect operations, event polling, and connection/data events.</p></div>
+            <div class="alert"><div class="alert-title">Custom transport</div><p>A custom implementation must raise callbacks on Unity's main thread, assign stable connection IDs, preserve message boundaries, and honor the supplied payload size.</p></div>
+        </section>
+
+        <section id="FrizzNetworkTransform" class="tab-content">
+            <span class="badge">Synchronizer</span><h1>FrizzNetworkTransform</h1>
+            <p class="lead">Owner-authored position, rotation, optional scale, thresholds, send rate, and interpolation.</p>
+            <div class="card"><p>Updates are unreliable and replaceable. Use <code>ForceBroadcastState()</code> for an immediate sample.</p></div>
+            <div class="alert warning"><div class="alert-title">Authority</div><p>The host relays client transform packets without complete ownership or movement validation. Validate sensitive movement separately.</p></div>
+        </section>
+
+        <section id="FrizzNetworkAnimator" class="tab-content">
+            <span class="badge">Synchronizer</span><h1>FrizzNetworkAnimator</h1>
+            <p class="lead">Tracks float, int, and bool parameters and replicates triggers.</p>
+            <div class="card"><p>Call <code>SetTrigger</code> on <code>FrizzNetworkAnimator</code>, not directly on the Animator, when the trigger must replicate.</p></div>
+            <div class="alert"><div class="alert-title">Scope</div><p>Animator states, transitions, layer time, and late-join snapshots are not serialized.</p></div>
+        </section>
+
+        <section id="FrizzNetworkRigidbody" class="tab-content">
+            <span class="badge">Synchronizer</span><h1>FrizzNetworkRigidbody</h1>
+            <p class="lead">Replicates position and linear velocity for physics-driven objects.</p>
+            <div class="alert warning"><div class="alert-title">Configure remote physics</div><p>Rotation and angular velocity are not synchronized, and remote bodies are not automatically kinematic. Prevent local simulation from fighting interpolation.</p></div>
+        </section>
+
+        <section id="FrizzInterestManager" class="tab-content">
+            <span class="badge">Bandwidth</span><h1>FrizzInterestManager</h1>
+            <p class="lead">Optional distance filtering for host relays of client-authored transform updates.</p>
+            <div class="card"><p>Configure <code>InterestRadius</code> and <code>InterestEnabled</code>. Owners remain interested; unknown client positions default to interested.</p></div>
+            <div class="alert warning"><div class="alert-title">Narrow scope</div><p>It does not currently filter host transforms, voice, spawn, Animator, Rigidbody, RPC, variable, or custom traffic.</p></div>
+        </section>
+
+        <section id="FrizzServerManager" class="tab-content">
+            <span class="badge">Session manager</span><h1>FrizzServerManager</h1>
+            <p class="lead">Configures Steam lobby capacity, visibility, name, password metadata, startup, shutdown, and socket kicking.</p>
+            <div class="card"><p><code>StartServer</code>, <code>StopServer</code>, and <code>KickPlayer</code>. Settings include <code>MaxPlayers</code>, <code>LobbyType</code>, <code>LobbyName</code>, and <code>LobbyPassword</code>.</p></div>
+            <div class="alert danger"><div class="alert-title">Security</div><p>Password and kick behavior are convenience controls, not secure admission or banning.</p></div>
+        </section>
+
+        <section id="FrizzNetworkSceneManager" class="tab-content">
+            <span class="badge">Session manager</span><h1>FrizzNetworkSceneManager</h1>
+            <p class="lead">Host-initiated reliable scene-load broadcast followed by synchronous Unity scene loading.</p>
+            <pre><code>FrizzNetworkSceneManager.Instance.LoadScene("GameScene");</code></pre>
+            <div class="alert warning"><div class="alert-title">Readiness</div><p>No async progress, ready handshake, or late-join current-scene synchronization is provided. Build those at the game-session layer.</p></div>
+        </section>
+
+        <section id="FrizzHostMigration" class="tab-content">
+            <span class="badge">Experimental</span><h1>FrizzHostMigration</h1>
+            <p class="lead">Graceful object snapshot support layered over Steam lobby-owner reconnection.</p>
+            <div class="card"><h2>Captured</h2><p>Prefab name, object ID, owner, position, rotation, scale, and next ID seed.</p></div>
+            <div class="card"><h2>Not captured</h2><p>Scene, variables, Animator, Rigidbody, custom game state, readiness, and disconnected-owner repair.</p></div>
+            <div class="alert danger"><div class="alert-title">Not seamless migration</div><p>An abruptly lost host cannot send a final snapshot. Add continuous authoritative checkpoints and a complete restore protocol before relying on migration.</p></div>
+        </section>
+
+        <section id="FrizzVoiceManager" class="tab-content">
+            <span class="badge">Steam voice</span><h1>FrizzVoiceManager</h1>
+            <p class="lead">Captures compressed Steam voice, relays it, decompresses PCM, and manages optional spatial speakers.</p>
+            <div class="card"><p>Settings: <code>EnableVoice</code>, <code>UsePushToTalk</code>, push-to-talk key, <code>SpatialAudio</code>, <code>MaxAudioDistance</code>, and <code>VolumeMultiplier</code>.</p></div>
+            <pre><code>FrizzVoiceManager.Instance.EnableVoice = true;
+FrizzVoiceManager.Instance.UsePushToTalk = true;
+FrizzVoiceManager.Instance.SpatialAudio = true;
+FrizzVoiceManager.Instance.MaxAudioDistance = 35f;
+FrizzVoiceManager.Instance.VolumeMultiplier = 1f;</code></pre>
+            <div class="alert warning"><div class="alert-title">Steam only</div><p>Voice requires Steam initialization and a Steam lobby. It is not interest-filtered and is unavailable over local TCP.</p></div>
+        </section>
+
+        <section id="FrizzPlayerSpawner" class="tab-content">
+            <span class="badge">Spawner</span><h1>FrizzPlayerSpawner</h1>
+            <p class="lead">Host-side player spawning with random or round-robin points and optional overlap checks.</p>
+            <div class="card"><p>Configure the player prefab, spawn points, selection mode, auto-spawn, occupied-point checks, radius, and layer mask.</p></div>
+            <pre><code>if (NetworkManager.Instance.IsHost)
+{
+    playerSpawner.SpawnPlayer(ownerConnectionId);
+}</code></pre>
+            <div class="alert"><div class="alert-title">Local sessions</div><p>Automatic startup hooks are Steam-lobby oriented. Trigger local player spawning from connection events or call <code>SpawnPlayer</code> explicitly.</p></div>
+        </section>
+
+        <section id="FrizzServerSpawner" class="tab-content">
+            <span class="badge">Spawner</span><h1>FrizzServerSpawner</h1>
+            <p class="lead">Spawns configured host-owned prefabs at designated transforms.</p>
+            <div class="card"><p>Call <code>SpawnAll()</code> on the host or enable lobby-triggered spawning. Every prefab must be registered and include <code>NetworkIdentity</code>. Spawned items use owner ID <code>0</code>.</p></div>
+            <pre><code>if (NetworkManager.Instance.IsHost &amp;&amp; !serverSpawner.HasSpawned)
+{
+    serverSpawner.SpawnAll();
+}</code></pre>
+        </section>
+
+        <footer><span class="footer-brand">⚡ FrizzNet</span> local documentation · Behavior verified against the current runtime source</footer>
+    </main>
+</div>
 </body>
 </html>
