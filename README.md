@@ -43,31 +43,6 @@ Both setups require a `NetworkManager` and exactly one enabled component impleme
 - [Code samples](Documentation/index.html#CodeSamples)
 - [Local HTML reference](Documentation/index.html)
 
-The HTML reference is also opened by FrizzNet's inspector help buttons.
-
-To host the docs locally or behind Cloudflare Tunnel (default port `3000`):
-
-```powershell
-cd Documentation
-./serve-docs.ps1
-```
-
-The script binds `http://+:3000/` by default so public Host headers like
-`frizznet.obsidianinteractive.site` work. Without that, Windows returns
-`400 Invalid Hostname`.
-
-If the any-host bind is denied, run once in Administrator PowerShell:
-
-```powershell
-netsh http add urlacl url=http://+:3000/ user="$env:USERDOMAIN\$env:USERNAME"
-```
-
-Then re-run `./serve-docs.ps1`. For local-only browsing:
-
-```powershell
-./serve-docs.ps1 -LocalOnly
-```
-
 ## Minimal custom message
 
 Use positive message IDs. Negative IDs are reserved by FrizzNet.
