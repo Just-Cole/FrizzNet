@@ -13,7 +13,6 @@ namespace FrizzNet.Core
     /// (e.g. world obstacles, interactable chests, NPCs) at designated locations when the host session starts.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Spawns a list of prefabs at designated locations automatically on the Host when the session starts.", "index.html#FrizzServerSpawner")]
     public class FrizzServerSpawner : MonoBehaviour
     {
         [System.Serializable]

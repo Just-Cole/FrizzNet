@@ -370,7 +370,6 @@ MonoBehaviour:
   m_PlayerPrefab: {fileID: 0}
   m_ResourcePrefab: {fileID: 0}
   m_LobbySceneName: DemoLobbyScene
-  m_LocalLobbySceneName: DemoLocalTestScene
   m_SpawnAreaMin: {x: -8, y: 0.5, z: -8}
   m_SpawnAreaMax: {x: 8, y: 0.5, z: 8}
 --- !u!4 &1712089097

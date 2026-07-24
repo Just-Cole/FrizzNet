@@ -11,7 +11,6 @@ namespace FrizzNet.Core
     /// Attach to the same GameObject as NetworkManager.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Serializes spawned object state when lobby ownership transfers so the new host can restore the session.", "index.html#FrizzHostMigration")]
     public class FrizzHostMigration : MonoBehaviour
     {
         public static FrizzHostMigration Instance { get; private set; }

@@ -12,7 +12,6 @@ namespace FrizzNet.Core
     /// routing packets, decompressing incoming voice, and managing active speaker outputs.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Manages local voice capture via Steam Voice API, network packet transmission, and spatial speaker instantiation.", "index.html#FrizzVoiceManager")]
     public class FrizzVoiceManager : MonoBehaviour
     {
         public static FrizzVoiceManager Instance { get; private set; }

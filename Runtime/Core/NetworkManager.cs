@@ -14,7 +14,6 @@ namespace FrizzNet.Core
     /// message routing, and dynamic object spawning.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("The core manager coordinating player connection rosters, custom packet handlers routing, and network object spawn synchronization.", "index.html#NetworkManager")]
     public class NetworkManager : MonoBehaviour
     {
         public static NetworkManager Instance { get; private set; }

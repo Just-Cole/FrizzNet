@@ -1,13 +1,12 @@
 # FrizzNet
 
-FrizzNet is a lightweight multiplayer framework for Unity 6+. It provides Steam Networking Sockets for internet play, a local TCP transport for development, binary messages, replicated objects, synchronization components, Steam lobbies, and Steam voice chat.
+FrizzNet is a lightweight multiplayer framework for Unity 6+. It provides Steam Networking Sockets for internet play, binary messages, replicated objects, synchronization components, Steam lobbies, and Steam voice chat.
 
 FrizzNet uses a host-and-clients topology. The host owns object spawning and session flow. Client-authored gameplay requests must still be validated by your game code before changing authoritative state.
 
 ## Features
 
 - Steam P2P transport, lobbies, invites, metadata, and lobby browsing
-- Local TCP sessions for testing without a Steam lobby
 - Binary custom messaging with reliable and unreliable delivery
 - Host-controlled network object spawning and despawning
 - `NetworkBehaviour` lifecycle, RPC helpers, and network variables
@@ -21,7 +20,7 @@ FrizzNet uses a host-and-clients topology. The host owns object spawning and ses
 ## Requirements
 
 - Unity 6+
-- Steamworks.NET (the runtime assembly references it for both transports)
+- Steamworks.NET
 - Steam client and a valid App ID when using Steam features
 
 The included `SteamManager` currently calls `RestartAppIfNecessary` with App ID `480`. Change that implementation before shipping under your own Steam application. A `steam_appid.txt` file is still useful for local Steam testing, but does not replace that code change.
@@ -29,10 +28,9 @@ The included `SteamManager` currently calls `RestartAppIfNecessary` with App ID 
 ## Choose a setup
 
 - [Steam setup](Documentation/index.html#SteamTransport) — lobbies, invites, NAT traversal, and internet play
-- [Local setup](Documentation/index.html#LocalTransport) — same-machine or LAN TCP testing
 - [Complete setup and architecture guide](Documentation/index.html#SetupGuide)
 
-Both setups require a `NetworkManager` and exactly one enabled component implementing `INetworkTransport`. Assign that component to **Transport Component**, then register every dynamically spawned prefab in **Spawnable Prefabs** on every peer.
+Setup requires a `NetworkManager` and an enabled `SteamTransport` implementing `INetworkTransport`. Assign that component to **Transport Component**, then register every dynamically spawned prefab in **Spawnable Prefabs** on every peer.
 
 ## Documentation
 
@@ -90,13 +88,11 @@ private void OnChatReceived(ulong senderId, MessageReader reader)
 - Interest management currently filters relayed client transform updates only.
 - Host migration restores prefab identity, transform, scale, owner, and ID seed only, and should be treated as experimental.
 - RPC dispatch currently targets the first `NetworkBehaviour` on an object. Keep RPC handlers on one behaviour per networked object.
-- Steam voice chat is not available through `LocalTransport`.
 
 See the HTML reference for full behavior, examples, and safe usage rules.
 
 ## Included samples
 
-- `Samples/LocalTest` — local host/join flow
 - `Samples/LobbyExample` — Steam lobby and demo session flow
 - `Samples/ChatExample` — custom message registration and relay
 

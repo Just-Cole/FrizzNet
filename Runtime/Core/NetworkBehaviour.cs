@@ -9,7 +9,6 @@ namespace FrizzNet.Core
     /// Base class for scripts that need network synchronization, authority checks, and lifecycle callbacks.
     /// Exposes helper properties like HasAuthority and IsLocalPlayer directly.
     /// </summary>
-    [FrizzHelp("Base class for components requiring network synchronization, authority check properties, and virtual lifecycle hooks.", "index.html#NetworkBehaviour")]
     public abstract partial class NetworkBehaviour : MonoBehaviour
     {
         private readonly Dictionary<short, ISyncVarBinding> m_SyncVarBindings = new Dictionary<short, ISyncVarBinding>();

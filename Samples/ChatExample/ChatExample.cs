@@ -13,7 +13,6 @@ namespace FrizzNet.Samples
     /// to build a lobby-wide text chat system.
     /// Styled in dark mode with neon accenting.
     /// </summary>
-    [FrizzHelp("Sample text chat log demonstrating custom message handler registration and packet replication over raw socket connections.")]
     public class ChatExample : MonoBehaviour
     {
         private const short MSG_CHAT = 101;

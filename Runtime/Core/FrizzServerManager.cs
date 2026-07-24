@@ -11,7 +11,6 @@ namespace FrizzNet.Core
     /// Acts as a central host/session manager.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Manages hosting parameters, lobby types, names, passwords, and player kicking.", "index.html#FrizzServerManager")]
     public class FrizzServerManager : MonoBehaviour
     {
         public static FrizzServerManager Instance { get; private set; }

@@ -3,11 +3,9 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using FrizzNet.Core;
 using FrizzNet.Steam;
 using FrizzNet.Samples;
-using FrizzNet.Transport;
 
 namespace FrizzNet.Editor
 {
@@ -20,8 +18,6 @@ namespace FrizzNet.Editor
         private const string LobbyScenePath = ScenesFolder + "/DemoLobbyScene.unity";
         private const string GameScenePath = ScenesFolder + "/DemoGameScene.unity";
 
-        private const string LocalTestScenePath = ScenesFolder + "/DemoLocalTestScene.unity";
-
         [MenuItem("Tools/FrizzNet/Setup Demo Scenes")]
         public static void SetupDemoScenes()
         {
@@ -29,24 +25,11 @@ namespace FrizzNet.Editor
 
             CreateLobbyScene();
             CreateGameScene();
-            CreateLocalTestScene();
             UpdateBuildSettings();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[FrizzNet] Demo scenes created at Assets/FrizzNet/Samples/Scenes/.");
-        }
-
-        [MenuItem("Tools/FrizzNet/Setup Local Test Scene")]
-        public static void SetupLocalTestSceneOnly()
-        {
-            EnsureFolder(ScenesFolder);
-            CreateLocalTestScene();
-            CreateGameScene();
-            UpdateBuildSettings();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log("[FrizzNet] Local test scene created. Open DemoLocalTestScene and run two instances.");
         }
 
         private static void CreateLobbyScene()
@@ -56,7 +39,6 @@ namespace FrizzNet.Editor
             GameObject networkRoot = new GameObject("FrizzNet");
             networkRoot.AddComponent<NetworkManager>();
             networkRoot.AddComponent<SteamTransport>();
-            networkRoot.AddComponent<LocalTransport>().enabled = false;
             networkRoot.AddComponent<FrizzServerManager>();
             networkRoot.AddComponent<FrizzVoiceManager>();
             networkRoot.AddComponent<FrizzNetworkSceneManager>();
@@ -83,31 +65,11 @@ namespace FrizzNet.Editor
             EditorSceneManager.SaveScene(scene, GameScenePath);
         }
 
-        private static void CreateLocalTestScene()
-        {
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-
-            GameObject networkRoot = new GameObject("FrizzNet");
-            networkRoot.AddComponent<LocalTransport>();
-            networkRoot.AddComponent<NetworkManager>();
-            SteamTransport steamTransport = networkRoot.AddComponent<SteamTransport>();
-            steamTransport.enabled = false;
-            networkRoot.AddComponent<FrizzNetworkSceneManager>();
-            networkRoot.AddComponent<FrizzHostMigration>();
-            networkRoot.AddComponent<FrizzInterestManager>();
-
-            GameObject sampleUi = new GameObject("SampleUI");
-            sampleUi.AddComponent<LocalTestExample>();
-
-            EditorSceneManager.SaveScene(scene, LocalTestScenePath);
-        }
-
         private static void UpdateBuildSettings()
         {
             var scenes = new[]
             {
                 new EditorBuildSettingsScene(LobbyScenePath, true),
-                new EditorBuildSettingsScene(LocalTestScenePath, true),
                 new EditorBuildSettingsScene(GameScenePath, true)
             };
             EditorBuildSettings.scenes = scenes;

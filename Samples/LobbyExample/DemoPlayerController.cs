@@ -12,7 +12,6 @@ namespace FrizzNet.Samples
     /// and screen-space name tag rendering using Steamworks profile names.
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
-    [FrizzHelp("Reads keyboard inputs to move and rotate player characters possessing authority. Renders hovering profile name tags on screen.")]
     public class DemoPlayerController : NetworkBehaviour
     {
         [Header("Movement Settings")]

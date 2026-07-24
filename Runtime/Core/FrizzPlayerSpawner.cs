@@ -19,7 +19,6 @@ namespace FrizzNet.Core
     /// and synchronizes authority across the network.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Manages player character spawning across the network, supporting multiple selection modes and overlap checks.", "index.html#FrizzPlayerSpawner")]
     public class FrizzPlayerSpawner : MonoBehaviour
     {
         [Header("Spawn Settings")]

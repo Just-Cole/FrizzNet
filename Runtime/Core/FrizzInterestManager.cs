@@ -10,7 +10,6 @@ namespace FrizzNet.Core
     /// to clients that are within range of the object or its owner.
     /// </summary>
     [DisallowMultipleComponent]
-    [FrizzHelp("Reduces bandwidth by only replicating objects to clients within a configurable distance.", "index.html#FrizzInterestManager")]
     public class FrizzInterestManager : MonoBehaviour
     {
         public static FrizzInterestManager Instance { get; private set; }

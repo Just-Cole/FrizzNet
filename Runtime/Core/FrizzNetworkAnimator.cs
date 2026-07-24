@@ -10,7 +10,6 @@ namespace FrizzNet.Core
     /// Synchronizes Unity Animator component states, parameters, and triggers across the network.
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
-    [FrizzHelp("Synchronizes Unity Animator state, parameters, and triggers smoothly across all network clients.", "index.html#FrizzNetworkAnimator")]
     public class FrizzNetworkAnimator : NetworkBehaviour
     {
         private struct TrackedParameter

@@ -8,7 +8,6 @@ namespace FrizzNet.Core
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [RequireComponent(typeof(Rigidbody))]
-    [FrizzHelp("Synchronizes Rigidbody velocity and position for physics-driven networked objects.", "index.html#FrizzNetworkRigidbody")]
     public class FrizzNetworkRigidbody : NetworkBehaviour
     {
         [Header("Sync Settings")]

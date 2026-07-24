@@ -11,7 +11,6 @@ namespace FrizzNet.Samples
     /// Self-contained Unity IMGUI sample demonstrating Steam matchmaking lobby usage.
     /// Features a custom stylized dark mode IMGUI interface with neon colors and rich text formatting.
     /// </summary>
-    [FrizzHelp("Sample IMGUI dashboard enabling players to create/join lobbies, toggle ready states, configure game options, and invite friends.")]
     public class LobbyExample : MonoBehaviour
     {
         [Header("Scene Settings")]

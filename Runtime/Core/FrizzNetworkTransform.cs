@@ -8,7 +8,6 @@ namespace FrizzNet.Core
     /// Uses interpolation for smooth rendering of remote objects.
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
-    [FrizzHelp("Synchronizes the position and rotation of this GameObject across the network unreliably. Smoothly interpolates remote positions to eliminate jitter.", "index.html#FrizzNetworkTransform")]
     public class FrizzNetworkTransform : NetworkBehaviour
     {
 

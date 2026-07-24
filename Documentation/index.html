@@ -31,7 +31,7 @@
         }
 
         function highlightCSharp(source) {
-            const tokens = /(\/\/.*$|\/\*[\s\S]*?\*\/)|(\$?"(?:\\.|[^"\\])*")|(\b(?:using|namespace|public|private|protected|internal|sealed|abstract|static|readonly|const|class|struct|interface|enum|event|override|virtual|new|return|if|else|foreach|for|while|switch|case|break|continue|try|catch|finally|throw|in|out|ref|this|base|typeof|null|true|false)\b)|(\b(?:void|bool|byte|short|int|long|ulong|float|double|string|var|GameObject|MonoBehaviour|Vector3|Quaternion|MessageWriter|MessageReader|NetworkManager|NetworkBehaviour|NetworkIdentity|FrizzNetworkVariable|FrizzNetworkAnimator|FrizzNetworkSceneManager|FrizzServerManager|FrizzLocalSession|FrizzLobby|FrizzLobbyBrowser|Debug|Mathf)\b)|(\b\d+(?:\.\d+)?f?\b)/gm;
+            const tokens = /(\/\/.*$|\/\*[\s\S]*?\*\/)|(\$?"(?:\\.|[^"\\])*")|(\b(?:using|namespace|public|private|protected|internal|sealed|abstract|static|readonly|const|class|struct|interface|enum|event|override|virtual|new|return|if|else|foreach|for|while|switch|case|break|continue|try|catch|finally|throw|in|out|ref|this|base|typeof|null|true|false)\b)|(\b(?:void|bool|byte|short|int|long|ulong|float|double|string|var|GameObject|MonoBehaviour|Vector3|Quaternion|MessageWriter|MessageReader|NetworkManager|NetworkBehaviour|NetworkIdentity|FrizzNetworkVariable|FrizzNetworkAnimator|FrizzNetworkSceneManager|FrizzServerManager|FrizzLobby|FrizzLobbyBrowser|Debug|Mathf)\b)|(\b\d+(?:\.\d+)?f?\b)/gm;
             let html = '';
             let cursor = 0;
             let match;
@@ -99,9 +99,7 @@
         <div class="nav-group-title">Transports & Steam</div>
         <ul class="nav-list">
             <li><a class="nav-link nav-transport" href="#SteamTransport">SteamTransport</a></li>
-            <li><a class="nav-link nav-transport" href="#LocalTransport">LocalTransport</a></li>
             <li><a class="nav-link nav-transport" href="#FrizzLobby">Lobbies</a></li>
-            <li><a class="nav-link nav-transport" href="#FrizzLocalSession">Local sessions</a></li>
             <li><a class="nav-link nav-transport" href="#INetworkTransport">Transport contract</a></li>
         </ul>
         <div class="nav-group-title">Replication</div>
@@ -130,22 +128,22 @@
             <div class="hero">
                 <span class="badge">Unity 6+ networking</span>
                 <h1 class="hero-title">Frizz<span>Net</span></h1>
-                <p class="lead">Steam P2P and local TCP networking with binary messages, replicated objects, synchronization components, lobbies, and Steam voice.</p>
+                <p class="lead">Steam P2P networking with binary messages, replicated objects, synchronization components, lobbies, and Steam voice.</p>
                 <div class="hero-actions">
                     <a class="btn btn-primary" href="#SetupGuide">Get started</a>
                     <a class="btn" href="#CodeSamples">Browse code samples</a>
                     <a class="btn" href="#Authority">Read the authority model</a>
                 </div>
                 <div class="hero-stats">
-                    <div class="stat"><div class="stat-value">2</div><div class="stat-label">Transports</div></div>
+                    <div class="stat"><div class="stat-value">1</div><div class="stat-label">Transport</div></div>
                     <div class="stat"><div class="stat-value">7</div><div class="stat-label">SyncVar types</div></div>
                     <div class="stat"><div class="stat-value">10</div><div class="stat-label">System channels</div></div>
-                    <div class="stat"><div class="stat-value">3</div><div class="stat-label">Samples</div></div>
+                    <div class="stat"><div class="stat-value">2</div><div class="stat-label">Samples</div></div>
                 </div>
             </div>
             <div class="grid">
                 <div class="card feature accent-transport"><div class="feature-icon">🎮</div><h2>Steam</h2><p>Lobbies, invites, browsing, NAT traversal, owner changes, and voice through Steamworks.NET.</p></div>
-                <div class="card feature accent-core"><div class="feature-icon">🔌</div><h2>Local TCP</h2><p>Fast same-machine and LAN testing through the same gameplay-facing manager APIs.</p></div>
+                <div class="card feature accent-core"><div class="feature-icon">💬</div><h2>Messaging</h2><p>Binary custom packets with reliable and unreliable delivery through MessageWriter and MessageReader.</p></div>
                 <div class="card feature accent-sync"><div class="feature-icon">📡</div><h2>Replication</h2><p>Host spawning plus owner-authored transform, Animator, Rigidbody, RPC, and variable helpers.</p></div>
                 <div class="card feature accent-spawner"><div class="feature-icon">🛠️</div><h2>Editor tools</h2><p>Inspector help, runtime monitoring, demo setup, and sample prefab generation under <code>Tools &gt; FrizzNet</code>.</p></div>
             </div>
@@ -160,7 +158,7 @@
                 <h2>Shared setup</h2>
                 <div class="steps">
                     <div class="step"><div class="step-number">1</div><p>Add <code>NetworkManager</code> to a startup-scene GameObject.</p></div>
-                    <div class="step"><div class="step-number">2</div><p>Add exactly one enabled transport: <code>SteamTransport</code> or <code>LocalTransport</code>.</p></div>
+                    <div class="step"><div class="step-number">2</div><p>Add <code>SteamTransport</code> to the same GameObject.</p></div>
                     <div class="step"><div class="step-number">3</div><p>Assign it to <strong>Transport Component</strong>.</p></div>
                     <div class="step"><div class="step-number">4</div><p>Add every dynamic prefab to <strong>Spawnable Prefabs</strong> on every build.</p></div>
                     <div class="step"><div class="step-number">5</div><p>Add <code>NetworkIdentity</code> and required synchronization components to those prefabs.</p></div>
@@ -176,16 +174,6 @@ FrizzServerManager.Instance.MaxPlayers = 8;
 FrizzServerManager.Instance.LobbyName = "Co-op Session";
 FrizzServerManager.Instance.LobbyType = ELobbyType.k_ELobbyTypePublic;
 FrizzServerManager.Instance.StartServer();</code></pre>
-            </div>
-            <div class="card">
-                <h2>Local TCP session</h2>
-                <pre><code>using FrizzNet.Transport;
-
-// Host instance
-FrizzLocalSession.Host(port: 7777, maxPlayers: 8);
-
-// Client instance
-FrizzLocalSession.Join("127.0.0.1:7777");</code></pre>
             </div>
         </section>
 
@@ -472,13 +460,6 @@ public sealed class NetworkScore : NetworkBehaviour
             <div class="alert warning"><div class="alert-title">Capacity and admission</div><p>The transport does not fully enforce lobby membership or capacity on every incoming socket. Validate admission in session code. Connectivity migration does not restore gameplay state.</p></div>
         </section>
 
-        <section id="LocalTransport" class="tab-content">
-            <span class="badge">Transport</span><h1>LocalTransport</h1>
-            <p class="lead">Length-prefixed TCP transport for same-machine and LAN development.</p>
-            <div class="card"><table><tr><th>Method</th><th>Use</th></tr><tr><td><code>StartHost(address, port, maxPlayers)</code></td><td>Start a local listener.</td></tr><tr><td><code>StartClient(address, port)</code></td><td>Connect to a host.</td></tr><tr><td><code>StopHost / Disconnect</code></td><td>End the role.</td></tr><tr><td><code>DisconnectClient</code></td><td>Host disconnects one remote client.</td></tr></table></div>
-            <div class="alert"><div class="alert-title">TCP behavior</div><p>The reliable flag is ignored because TCP is reliable. Maximum framed packet size is 1 MiB. Local sessions do not provide Steam lobbies, voice, or owner-based migration.</p></div>
-        </section>
-
         <section id="FrizzLobby" class="tab-content">
             <span class="badge">Steam API</span><h1>FrizzLobby &amp; Browser</h1>
             <p class="lead">Create, join, leave, invite, inspect members, manage metadata, and browse public lobbies.</p>
@@ -505,18 +486,9 @@ FrizzLobbyBrowser.RequestLobbyList(
             <div class="alert danger"><div class="alert-title">Passwords are not authentication</div><p>The current lobby password is visible metadata checked client-side. Kicking closes a socket but does not create a ban or prevent reconnect.</p></div>
         </section>
 
-        <section id="FrizzLocalSession" class="tab-content">
-            <span class="badge">Local API</span><h1>FrizzLocalSession</h1>
-            <p class="lead">Convenience API for local host, join, leave, and session status.</p>
-            <pre><code>FrizzLocalSession.Host(7777, 8);
-FrizzLocalSession.Join("127.0.0.1:7777");
-FrizzLocalSession.Leave();</code></pre>
-            <div class="card"><p>Addresses may be a port, <code>host:port</code>, or localhost. The convenience host binds to <code>127.0.0.1</code>. Use <code>NetworkManager</code> connection events for gameplay lifecycle.</p></div>
-        </section>
-
         <section id="INetworkTransport" class="tab-content">
             <span class="badge">Transport contract</span><h1>INetworkTransport</h1>
-            <p class="lead">Contract implemented by Steam and local TCP transports.</p>
+            <p class="lead">Contract implemented by SteamTransport.</p>
             <div class="card"><h2>Responsibilities</h2><p>Role state, host/client startup and shutdown, per-client connections, send operations, disconnect operations, event polling, and connection/data events.</p></div>
             <div class="alert"><div class="alert-title">Custom transport</div><p>A custom implementation must raise callbacks on Unity's main thread, assign stable connection IDs, preserve message boundaries, and honor the supplied payload size.</p></div>
         </section>
@@ -579,7 +551,7 @@ FrizzVoiceManager.Instance.UsePushToTalk = true;
 FrizzVoiceManager.Instance.SpatialAudio = true;
 FrizzVoiceManager.Instance.MaxAudioDistance = 35f;
 FrizzVoiceManager.Instance.VolumeMultiplier = 1f;</code></pre>
-            <div class="alert warning"><div class="alert-title">Steam only</div><p>Voice requires Steam initialization and a Steam lobby. It is not interest-filtered and is unavailable over local TCP.</p></div>
+            <div class="alert warning"><div class="alert-title">Steam only</div><p>Voice requires Steam initialization and a Steam lobby. It is not interest-filtered.</p></div>
         </section>
 
         <section id="FrizzPlayerSpawner" class="tab-content">
@@ -590,7 +562,6 @@ FrizzVoiceManager.Instance.VolumeMultiplier = 1f;</code></pre>
 {
     playerSpawner.SpawnPlayer(ownerConnectionId);
 }</code></pre>
-            <div class="alert"><div class="alert-title">Local sessions</div><p>Automatic startup hooks are Steam-lobby oriented. Trigger local player spawning from connection events or call <code>SpawnPlayer</code> explicitly.</p></div>
         </section>
 
         <section id="FrizzServerSpawner" class="tab-content">
