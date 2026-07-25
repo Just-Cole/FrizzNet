@@ -82,6 +82,19 @@ namespace FrizzNet.Messaging
         }
 
         /// <summary>
+        /// Write a segment of raw bytes directly to the buffer without any length prefix.
+        /// </summary>
+        public void WriteRawBytes(byte[] value, int offset, int count)
+        {
+            if (value == null || count <= 0)
+            {
+                return;
+            }
+
+            m_Writer.Write(value, offset, count);
+        }
+
+        /// <summary>
         /// Returns the compiled byte array representation of the written data.
         /// </summary>
         public byte[] ToArray()

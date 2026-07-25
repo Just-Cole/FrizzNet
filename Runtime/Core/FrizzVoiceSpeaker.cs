@@ -44,6 +44,26 @@ namespace FrizzNet.Core
         /// </summary>
         public void EnqueueSamples(float[] samples)
         {
+            if (samples == null || samples.Length == 0)
+            {
+                return;
+            }
+
+            EnqueueSamples(samples, samples.Length);
+        }
+
+        /// <summary>
+        /// Enqueues the first <paramref name="count"/> decompressed samples.
+        /// </summary>
+        public void EnqueueSamples(float[] samples, int count)
+        {
+            if (samples == null || count <= 0)
+            {
+                return;
+            }
+
+            count = Mathf.Min(count, samples.Length);
+
             lock (m_QueueLock)
             {
                 // Cap queue to 2 seconds of audio to prevent delay/echo buildup from network jitter
@@ -52,9 +72,9 @@ namespace FrizzNet.Core
                     m_SampleQueue.Clear();
                 }
 
-                foreach (var sample in samples)
+                for (int i = 0; i < count; i++)
                 {
-                    m_SampleQueue.Enqueue(sample);
+                    m_SampleQueue.Enqueue(samples[i]);
                 }
             }
             m_LastDataReceivedTime = Time.time;

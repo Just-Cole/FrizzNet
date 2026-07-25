@@ -15,7 +15,7 @@ Host owns spawning and session flow. Clients send requests; your game code valid
 - **Behaviours** — `NetworkBehaviour` lifecycle, RPCs, and network variables
 - **Sync** — transform, animator, and rigidbody replication
 - **Scenes** — host-initiated networked scene loads
-- **Voice** — Steam push-to-talk / spatial voice chat
+- **Voice** — Steam push-to-talk / spatial voice chat with noise suppression (high-pass + adaptive gate)
 - **Tools** — runtime monitor (`Tools > FrizzNet`), demo scene setup, samples
 
 ## Requirements

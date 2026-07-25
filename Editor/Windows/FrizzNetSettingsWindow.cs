@@ -292,6 +292,19 @@ namespace FrizzNet.Editor.Windows
 
             voiceManager.VolumeMultiplier = EditorGUILayout.Slider("Volume Multiplier", voiceManager.VolumeMultiplier, 0f, 2f);
 
+            GUILayout.Space(6);
+            GUILayout.Label("NOISE SUPPRESSION", new GUIStyle(EditorStyles.miniBoldLabel) { normal = { textColor = m_NeonGreen } });
+            voiceManager.EnableNoiseSuppression = EditorGUILayout.Toggle("Enable Noise Suppression", voiceManager.EnableNoiseSuppression);
+            using (new EditorGUI.DisabledScope(!voiceManager.EnableNoiseSuppression))
+            {
+                voiceManager.GateOutboundPackets = EditorGUILayout.Toggle("Gate Outbound Packets", voiceManager.GateOutboundPackets);
+                voiceManager.AbsoluteGateThresholdDb = EditorGUILayout.Slider("Gate Threshold (dB)", voiceManager.AbsoluteGateThresholdDb, -70f, -20f);
+                voiceManager.GateOpenMarginDb = EditorGUILayout.Slider("Open Margin (dB)", voiceManager.GateOpenMarginDb, 2f, 20f);
+                voiceManager.HighPassHz = EditorGUILayout.Slider("High-Pass (Hz)", voiceManager.HighPassHz, 0f, 200f);
+                voiceManager.SuppressionStrength = EditorGUILayout.Slider("Suppression Strength", voiceManager.SuppressionStrength, 0f, 1f);
+                DrawStatusRow("Local Noise Gate", voiceManager.IsNoiseGateOpen);
+            }
+
             var speakers = voiceManager.ActiveSpeakers;
             if (speakers.Count > 0)
             {

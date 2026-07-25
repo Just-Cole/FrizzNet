@@ -545,13 +545,17 @@ FrizzLobbyBrowser.RequestLobbyList(
         <section id="FrizzVoiceManager" class="tab-content">
             <span class="badge">Steam voice</span><h1>FrizzVoiceManager</h1>
             <p class="lead">Captures compressed Steam voice, relays it, decompresses PCM, and manages optional spatial speakers.</p>
-            <div class="card"><p>Settings: <code>EnableVoice</code>, <code>UsePushToTalk</code>, push-to-talk key, <code>SpatialAudio</code>, <code>MaxAudioDistance</code>, and <code>VolumeMultiplier</code>.</p></div>
+            <div class="card"><p>Settings: <code>EnableVoice</code>, <code>UsePushToTalk</code>, push-to-talk key, <code>SpatialAudio</code>, <code>MaxAudioDistance</code>, <code>VolumeMultiplier</code>, and noise suppression (<code>EnableNoiseSuppression</code>, gate threshold, high-pass, outbound packet gating).</p></div>
             <pre><code>FrizzVoiceManager.Instance.EnableVoice = true;
 FrizzVoiceManager.Instance.UsePushToTalk = true;
 FrizzVoiceManager.Instance.SpatialAudio = true;
 FrizzVoiceManager.Instance.MaxAudioDistance = 35f;
-FrizzVoiceManager.Instance.VolumeMultiplier = 1f;</code></pre>
-            <div class="alert warning"><div class="alert-title">Steam only</div><p>Voice requires Steam initialization and a Steam lobby. It is not interest-filtered.</p></div>
+FrizzVoiceManager.Instance.VolumeMultiplier = 1f;
+FrizzVoiceManager.Instance.EnableNoiseSuppression = true;
+FrizzVoiceManager.Instance.GateOutboundPackets = true;
+FrizzVoiceManager.Instance.AbsoluteGateThresholdDb = -48f;
+FrizzVoiceManager.Instance.HighPassHz = 90f;</code></pre>
+            <div class="alert warning"><div class="alert-title">Steam only</div><p>Voice requires Steam initialization and a Steam lobby. Steam owns mic capture/encode, so noise suppression runs on decompressed PCM (receive cleanup + outbound packet gate). It is not interest-filtered.</p></div>
         </section>
 
         <section id="FrizzPlayerSpawner" class="tab-content">
