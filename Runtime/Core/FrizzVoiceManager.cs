@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Steamworks;
 using FrizzNet.Logging;
 using FrizzNet.Messaging;
@@ -24,7 +25,7 @@ namespace FrizzNet.Core
         [SerializeField] private bool m_UsePushToTalk = true;
 
         [Tooltip("The keyboard key used to talk when Push-to-Talk is enabled.")]
-        [SerializeField] private KeyCode m_PushToTalkKey = KeyCode.V;
+        [SerializeField] private Key m_PushToTalkKey = Key.V;
 
         [Header("Audio Output Settings")]
         [Tooltip("Enable 3D spatialized audio, locating voices at player GameObject transforms.")]
@@ -47,7 +48,7 @@ namespace FrizzNet.Core
         // Public getters for settings monitoring
         public bool EnableVoice { get => m_EnableVoice; set => m_EnableVoice = value; }
         public bool UsePushToTalk { get => m_UsePushToTalk; set => m_UsePushToTalk = value; }
-        public KeyCode PushToTalkKey { get => m_PushToTalkKey; set => m_PushToTalkKey = value; }
+        public Key PushToTalkKey { get => m_PushToTalkKey; set => m_PushToTalkKey = value; }
         public bool SpatialAudio { get => m_SpatialAudio; set => m_SpatialAudio = value; }
         public float MaxAudioDistance { get => m_MaxAudioDistance; set => m_MaxAudioDistance = value; }
         public float VolumeMultiplier { get => m_VolumeMultiplier; set => m_VolumeMultiplier = value; }
@@ -103,7 +104,7 @@ namespace FrizzNet.Core
                 return;
             }
 
-            bool wantRecord = !m_UsePushToTalk || Input.GetKey(m_PushToTalkKey);
+            bool wantRecord = !m_UsePushToTalk || IsPushToTalkHeld();
 
             if (wantRecord && !m_IsRecording)
             {
@@ -118,6 +119,17 @@ namespace FrizzNet.Core
             {
                 PollAndSendVoice();
             }
+        }
+
+        private bool IsPushToTalkHeld()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return false;
+            }
+
+            return keyboard[m_PushToTalkKey].isPressed;
         }
 
         private void LateUpdate()

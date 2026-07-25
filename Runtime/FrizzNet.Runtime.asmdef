@@ -2,7 +2,8 @@
     "name": "FrizzNet.Runtime",
     "rootNamespace": "FrizzNet",
     "references": [
-        "com.rlabrecque.steamworks.net"
+        "com.rlabrecque.steamworks.net",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -4,7 +4,8 @@
     "references": [
         "FrizzNet.Runtime",
         "FrizzNet.Samples",
-        "com.rlabrecque.steamworks.net"
+        "com.rlabrecque.steamworks.net",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

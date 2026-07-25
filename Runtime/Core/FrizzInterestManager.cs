@@ -19,10 +19,10 @@ namespace FrizzNet.Core
         [SerializeField] private float m_InterestRadius = 50f;
 
         [Tooltip("If true, interest checks are performed for transform and voice replication.")]
-        [SerializeField] private bool m_Enabled = true;
+        [SerializeField] private bool m_InterestChecksEnabled = true;
 
         public float InterestRadius { get => m_InterestRadius; set => m_InterestRadius = value; }
-        public bool InterestEnabled { get => m_Enabled; set => m_Enabled = value; }
+        public bool InterestEnabled { get => m_InterestChecksEnabled; set => m_InterestChecksEnabled = value; }
 
         private void Awake()
         {
@@ -47,7 +47,7 @@ namespace FrizzNet.Core
         /// </summary>
         public bool IsClientInterested(ulong clientId, NetworkIdentity target)
         {
-            if (!m_Enabled || target == null || NetworkManager.Instance == null)
+            if (!m_InterestChecksEnabled || target == null || NetworkManager.Instance == null)
             {
                 return true;
             }

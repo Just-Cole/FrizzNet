@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Steamworks;
 using FrizzNet.Core;
 using FrizzNet.Steam;
@@ -279,7 +280,7 @@ namespace FrizzNet.Editor.Windows
 
             if (voiceManager.UsePushToTalk)
             {
-                voiceManager.PushToTalkKey = (KeyCode)EditorGUILayout.EnumPopup("PTT Key", voiceManager.PushToTalkKey);
+                voiceManager.PushToTalkKey = (Key)EditorGUILayout.EnumPopup("PTT Key", voiceManager.PushToTalkKey);
             }
 
             voiceManager.SpatialAudio = EditorGUILayout.Toggle("Spatial 3D Audio", voiceManager.SpatialAudio);
