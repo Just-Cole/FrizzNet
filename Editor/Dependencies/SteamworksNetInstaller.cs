@@ -1,6 +1,6 @@
+using System;
+using System.IO;
 using UnityEditor;
-using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
@@ -12,52 +12,25 @@ namespace FrizzNet.Editor.Dependencies
         private const string PackageName = "com.rlabrecque.steamworks.net";
         private const string PackageGitUrl =
             "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.164.1";
-        private const string InstallRequestedKey = "FrizzNet.SteamworksNetInstallRequested";
-
-        private static AddRequest s_AddRequest;
+        private const string ManifestPath = "Packages/manifest.json";
 
         static SteamworksNetInstaller()
         {
-            EditorApplication.delayCall += EnsureInstalled;
+            EnsureInstalled();
         }
 
         private static void EnsureInstalled()
         {
-            if (IsSteamworksInstalled())
+            if (IsSteamworksInstalled() || ManifestHasSteamworks())
                 return;
 
-            if (SessionState.GetBool(InstallRequestedKey, false))
-                return;
-
-            SessionState.SetBool(InstallRequestedKey, true);
-            Debug.Log("[FrizzNet] Steamworks.NET is required. Installing from GitHub...");
-            s_AddRequest = Client.Add(PackageGitUrl);
-            EditorApplication.update += PollAddRequest;
-        }
-
-        private static void PollAddRequest()
-        {
-            if (s_AddRequest == null || !s_AddRequest.IsCompleted)
-                return;
-
-            EditorApplication.update -= PollAddRequest;
-
-            if (s_AddRequest.Status == StatusCode.Success)
+            if (!TryAddSteamworksToManifest())
             {
-                Debug.Log($"[FrizzNet] Installed Steamworks.NET {s_AddRequest.Result.version}.");
-            }
-            else
-            {
-                string error = s_AddRequest.Error != null ? s_AddRequest.Error.message : "Unknown Package Manager error.";
                 Debug.LogError(
-                    "[FrizzNet] Failed to install Steamworks.NET automatically. " +
+                    "[FrizzNet] Could not add Steamworks.NET to the project manifest. " +
                     "Add it from Package Manager with this Git URL:\n" +
-                    PackageGitUrl + "\n" +
-                    error);
-                SessionState.SetBool(InstallRequestedKey, false);
+                    PackageGitUrl);
             }
-
-            s_AddRequest = null;
         }
 
         private static bool IsSteamworksInstalled()
@@ -70,6 +43,37 @@ namespace FrizzNet.Editor.Dependencies
             }
 
             return false;
+        }
+
+        private static bool ManifestHasSteamworks()
+        {
+            if (!File.Exists(ManifestPath))
+                return false;
+
+            string json = File.ReadAllText(ManifestPath);
+            return json.IndexOf("\"" + PackageName + "\"", StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool TryAddSteamworksToManifest()
+        {
+            if (!File.Exists(ManifestPath))
+                return false;
+
+            string json = File.ReadAllText(ManifestPath);
+            const string dependenciesKey = "\"dependencies\"";
+            int dependenciesIndex = json.IndexOf(dependenciesKey, StringComparison.Ordinal);
+            if (dependenciesIndex < 0)
+                return false;
+
+            int braceIndex = json.IndexOf('{', dependenciesIndex);
+            if (braceIndex < 0)
+                return false;
+
+            string entry = Environment.NewLine + "    \"" + PackageName + "\": \"" + PackageGitUrl + "\",";
+            json = json.Insert(braceIndex + 1, entry);
+            File.WriteAllText(ManifestPath, json);
+            Debug.Log("[FrizzNet] Added Steamworks.NET to Packages/manifest.json.");
+            return true;
         }
     }
 }
