@@ -94,6 +94,12 @@ namespace FrizzNet.Core
 
         private void HandleLobbyJoined(CSteamID lobbyId)
         {
+            if (NetworkManager.Instance != null && NetworkManager.Instance.IsDedicatedServer)
+                return;
+
+            if (!SteamManager.Initialized)
+                return;
+
             // If we are the host/owner of the lobby, we spawn the host's player character
             CSteamID owner = FrizzLobby.GetOwner();
             if (owner == SteamUser.GetSteamID())
@@ -114,10 +120,13 @@ namespace FrizzNet.Core
 
         private void HandleClientConnected(ulong clientId)
         {
-            if (NetworkManager.Instance != null && NetworkManager.Instance.IsHost)
-            {
-                SpawnPlayer(clientId);
-            }
+            if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
+                return;
+
+            if (NetworkManager.Instance.IsDedicatedServer && clientId == NetworkManager.LocalConnectionId)
+                return;
+
+            SpawnPlayer(clientId);
         }
 
         /// <summary>

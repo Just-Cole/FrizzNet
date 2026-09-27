@@ -64,6 +64,12 @@ namespace FrizzNet.Core
 
         private void HandleLobbyJoined(CSteamID lobbyId)
         {
+            if (NetworkManager.Instance != null && NetworkManager.Instance.IsDedicatedServer)
+                return;
+
+            if (!SteamManager.Initialized)
+                return;
+
             // Only the owner of the lobby (Host) triggers the server spawning routine
             CSteamID owner = FrizzLobby.GetOwner();
             if (owner == SteamUser.GetSteamID())

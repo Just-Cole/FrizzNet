@@ -39,6 +39,9 @@ namespace FrizzNet.Core
         [SerializeField] private List<NetworkIdentity> m_SpawnablePrefabs = new List<NetworkIdentity>();
 
         [Header("Network Options")]
+        [Tooltip("If true, this process is a dedicated Steam Game Server. IsHost remains true; no local player pawn.")]
+        [SerializeField] private bool m_IsDedicatedServer;
+
         [Tooltip("If true, ensures the GameObject is not destroyed when loading a new Scene.")]
         [SerializeField] private bool m_DontDestroyOnLoad = true;
 
@@ -64,6 +67,7 @@ namespace FrizzNet.Core
         public INetworkTransport Transport => m_Transport;
         public bool IsHost => m_Transport != null && m_Transport.IsHost;
         public bool IsClient => m_Transport != null && m_Transport.IsClient;
+        public bool IsDedicatedServer { get => m_IsDedicatedServer; set => m_IsDedicatedServer = value; }
         public IReadOnlyCollection<ulong> ConnectedClients => m_ConnectedClients;
         public IReadOnlyDictionary<ulong, NetworkIdentity> NetworkObjects => m_NetworkObjects;
         internal ulong NextNetworkIdSeed => m_NextNetworkId;
@@ -153,6 +157,9 @@ namespace FrizzNet.Core
 
         private void InitializeTransport()
         {
+            if (m_Transport != null)
+                return;
+
             if (m_TransportComponent == null)
             {
                 MonoBehaviour[] components = GetComponents<MonoBehaviour>();
@@ -181,6 +188,47 @@ namespace FrizzNet.Core
             {
                 FrizzLogger.LogError("No component implementing INetworkTransport was assigned or found on the NetworkManager GameObject.");
             }
+        }
+
+        /// <summary>
+        /// Marks this process as a dedicated Steam Game Server. Host authority stays on this process.
+        /// </summary>
+        public void SetDedicatedServer(bool dedicated)
+        {
+            m_IsDedicatedServer = dedicated;
+        }
+
+        /// <summary>
+        /// Rebinds the active transport. Used when swapping SteamTransport for SteamGameServerTransport at boot.
+        /// </summary>
+        public void AssignTransport(INetworkTransport transport)
+        {
+            if (transport == null)
+            {
+                FrizzLogger.LogError("AssignTransport received a null transport.");
+                return;
+            }
+
+            if (m_Transport == transport)
+                return;
+
+            if (m_Transport != null)
+            {
+                m_Transport.OnClientConnected -= HandleClientConnected;
+                m_Transport.OnClientDisconnected -= HandleClientDisconnected;
+                m_Transport.OnDataReceived -= HandleDataReceived;
+                m_Transport.OnConnectedToServer -= HandleConnectedToServer;
+                m_Transport.OnDisconnectedFromServer -= HandleDisconnectedFromServer;
+            }
+
+            m_Transport = transport;
+            m_TransportComponent = transport as MonoBehaviour;
+            m_Transport.OnClientConnected += HandleClientConnected;
+            m_Transport.OnClientDisconnected += HandleClientDisconnected;
+            m_Transport.OnDataReceived += HandleDataReceived;
+            m_Transport.OnConnectedToServer += HandleConnectedToServer;
+            m_Transport.OnDisconnectedFromServer += HandleDisconnectedFromServer;
+            FrizzLogger.LogInfo("Transport assigned: " + m_Transport.GetType().Name);
         }
 
         private void BuildPrefabRegistry()

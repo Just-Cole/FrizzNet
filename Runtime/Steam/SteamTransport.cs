@@ -67,6 +67,12 @@ namespace FrizzNet.Steam
 
         private void Start()
         {
+            if (IsDedicatedMode())
+            {
+                FrizzLogger.LogWarning("SteamTransport is not used on the dedicated Game Server path.");
+                return;
+            }
+
             // Ensure Steamworks is initialized
             SteamManager.EnsureInstance();
 
@@ -89,9 +95,9 @@ namespace FrizzNet.Steam
 
             FrizzLogger.LogInfo("SteamTransport callbacks registered.");
 
-            if (SteamManager.Initialized)
+            if (TryGetLocalPlayerSteamId(out CSteamID localSteamId))
             {
-                NetworkManager.SetLocalConnectionId(SteamUser.GetSteamID().m_SteamID);
+                NetworkManager.SetLocalConnectionId(localSteamId.m_SteamID);
             }
         }
 
@@ -118,6 +124,12 @@ namespace FrizzNet.Steam
 
         public bool StartHost(int maxPlayers)
         {
+            if (IsDedicatedMode())
+            {
+                FrizzLogger.LogError("Cannot start a listen host on SteamTransport while dedicated mode is active. Use SteamGameServerTransport.");
+                return false;
+            }
+
             if (!SteamManager.Initialized)
             {
                 FrizzLogger.LogError("Cannot start host: Steam not initialized.");
@@ -168,6 +180,12 @@ namespace FrizzNet.Steam
 
         public bool StartClient(string hostAddress)
         {
+            if (IsDedicatedMode())
+            {
+                FrizzLogger.LogError("Dedicated Game Server processes do not connect as Steam clients.");
+                return false;
+            }
+
             if (!SteamManager.Initialized)
             {
                 FrizzLogger.LogError("Cannot connect client: Steam not initialized.");
@@ -445,11 +463,13 @@ namespace FrizzNet.Steam
                 CSteamID lobbyId = new CSteamID(callback.m_ulSteamIDLobby);
                 FrizzLogger.LogNetwork($"Lobby successfully created on Steam: {lobbyId}");
 
-                m_LastLobbyOwner = SteamUser.GetSteamID();
+                if (TryGetLocalPlayerSteamId(out CSteamID createdOwner))
+                    m_LastLobbyOwner = createdOwner;
+
                 FrizzLobby.TriggerLobbyCreated(lobbyId);
 
                 // Auto connect/host
-                if (m_AutoConnectToLobbyOwner)
+                if (m_AutoConnectToLobbyOwner && !IsDedicatedMode())
                 {
                     StartHost(8); // Default size 8
                 }
@@ -470,11 +490,9 @@ namespace FrizzNet.Steam
 
             FrizzLobby.TriggerLobbyJoined(lobbyId);
 
-            // Auto connect/host
-            if (m_AutoConnectToLobbyOwner)
+            // Auto connect/host — dedicated authority does not use player lobbies
+            if (m_AutoConnectToLobbyOwner && !IsDedicatedMode() && TryGetLocalPlayerSteamId(out CSteamID mySteamId))
             {
-                CSteamID mySteamId = SteamUser.GetSteamID();
-
                 if (owner != mySteamId)
                 {
                     // If we are joining someone else's lobby, connect to them
@@ -519,9 +537,13 @@ namespace FrizzNet.Steam
                 FrizzLogger.LogNetwork($"Lobby owner changed: {oldOwner} -> {currentOwner}");
                 FrizzLobby.TriggerLobbyOwnerChanged(lobbyId, oldOwner, currentOwner);
 
+                // Dedicated servers never migrate authority to a player lobby owner.
+                if (IsDedicatedMode())
+                    return;
+
                 // Host Migration Check
                 // If the new owner is the local player, and we are not currently hosting, start hosting!
-                if (currentOwner == SteamUser.GetSteamID())
+                if (TryGetLocalPlayerSteamId(out CSteamID localPlayer) && currentOwner == localPlayer)
                 {
                     if (!IsHost)
                     {
@@ -550,6 +572,21 @@ namespace FrizzNet.Steam
             FrizzLogger.LogNetwork("Lobby left event detected in Transport. Cleaning up socket connections...");
             StopHost();
             Disconnect();
+        }
+
+        private static bool IsDedicatedMode()
+        {
+            return NetworkManager.Instance != null && NetworkManager.Instance.IsDedicatedServer;
+        }
+
+        private static bool TryGetLocalPlayerSteamId(out CSteamID steamId)
+        {
+            steamId = CSteamID.Nil;
+            if (IsDedicatedMode() || !SteamManager.Initialized)
+                return false;
+
+            steamId = SteamUser.GetSteamID();
+            return steamId.IsValid();
         }
 
         #endregion

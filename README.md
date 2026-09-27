@@ -2,13 +2,14 @@
 
 Steam-first multiplayer networking for Unity 6+.
 
-FrizzNet gives you Steam Networking Sockets P2P, matchmaking lobbies, binary messaging, replicated objects, sync components, and Steam voice — without a dedicated server.
+FrizzNet gives you Steam Networking Sockets P2P, dedicated Steam Game Server hosting, matchmaking lobbies, binary messaging, replicated objects, sync components, and Steam voice.
 
-Host owns spawning and session flow. Clients send requests; your game code validates them before changing authoritative state.
+Host owns spawning and session flow. Clients send requests; your game code validates them before changing authoritative state. Dedicated processes are host-authoritative and never own a player pawn.
 
 ## Features
 
 - **Steam P2P** — NAT traversal via Steam Networking Sockets
+- **Dedicated Game Server** — `SteamGameServerManager` + `SteamGameServerTransport` for headless host authority
 - **Lobbies** — create, join, invite, browse, and sync lobby metadata
 - **Messaging** — binary packets with `MessageWriter` / `MessageReader`
 - **Spawning** — host-controlled spawn/despawn with prefab registry
@@ -111,17 +112,31 @@ Or browse sections directly:
 Generate demo scenes from `Tools > FrizzNet > Setup Demo Scenes`.  
 Open the live monitor from `Tools > FrizzNet`.
 
+## Dedicated Steam Game Server
+
+Player-hosted P2P lobbies stay available for local testing. A dedicated process uses the Steam Game Server API instead of `SteamUser`.
+
+1. Add `SteamGameServerManager` and `SteamGameServerTransport`.
+2. Set `NetworkManager.IsDedicatedServer = true`. Dedicated hosts still report `IsHost == true`.
+3. Call `SteamGameServerManager.Initialize()` then `Transport.StartHost` after `LoggedOn`.
+4. `LocalConnectionId` on the server is the **game server Steam ID**, not a player.
+5. Clients keep `SteamManager` + `SteamTransport` and `StartClient` to that Steam ID64.
+
+SpaceWar (App ID `480`) uses anonymous logon until you have a Steam App ID and GSLT. Players still need the Steam client. The dedicated box needs Steamworks Game Server DLLs, a root `steam_appid.txt` containing `480`, and outbound Steam traffic.
+
+Dedicated servers do not use player lobbies for authority and do not migrate host to a connected player.
+
 ## Project layout
 
 ```text
 FrizzNet/
 ├── Runtime/
 │   ├── Core/          NetworkManager, identity, sync, spawners, voice, scenes
-│   ├── Steam/         SteamTransport, FrizzLobby, FrizzLobbyBrowser
+│   ├── Steam/         SteamTransport, SteamGameServerTransport, FrizzLobby, FrizzLobbyBrowser
 │   ├── Messaging/     MessageWriter, MessageReader, system message IDs
 │   ├── Transport/     INetworkTransport
 │   ├── Logging/       FrizzLogger
-│   └── Utilities/     SteamManager
+│   └── Utilities/     SteamManager, SteamGameServerManager
 ├── Editor/            Monitor window, demo scene setup
 ├── Samples/           Lobby + chat examples
 └── Documentation/     HTML reference site
