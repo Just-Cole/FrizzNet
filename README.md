@@ -28,7 +28,7 @@ Host owns spawning and session flow. Clients send requests; your game code valid
 
 Installing FrizzNet also installs [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) into the project automatically. You do not need to add it by hand.
 
-> `SteamManager` currently hardcodes App ID `480` in `RestartAppIfNecessary`. Change that before shipping. A project-root `steam_appid.txt` helps local launches but does not replace the code change.
+> `SteamManager` uses App ID `480` (SpaceWar) and a project-root `steam_appid.txt`. It does not call `RestartAppIfNecessary`, so Play Mode will not quit the Unity Editor. Change the App ID before shipping.
 
 ## Quick start
 

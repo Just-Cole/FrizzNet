@@ -63,31 +63,21 @@ namespace FrizzNet.Steam
 
             try
             {
-                // RestartAppIfNecessary relaunches through Steam and expects this process to exit.
-                // In the editor that closes Unity. Built players still use it.
-                if (!Application.isEditor && m_RequireSteamClient && SteamAPI.RestartAppIfNecessary((AppId_t)480))
+                ESteamAPIInitResult initResult = SteamAPI.InitEx(out string steamError);
+                s_Initialized = initResult == ESteamAPIInitResult.k_ESteamAPIInitResult_OK;
+                if (!s_Initialized)
                 {
-                    FrizzLogger.LogWarning("Restarting app through Steam client...");
-                    Application.Quit();
-                    return;
+                    FrizzLogger.LogError("SteamAPI.Init failed (" + initResult + "): " + steamError +
+                                        ". Start the Steam client and stay logged in.");
+                }
+                else
+                {
+                    FrizzLogger.LogInfo("Steamworks API successfully initialized.");
                 }
             }
             catch (DllNotFoundException e)
             {
                 FrizzLogger.LogError("[Steamworks.NET] Could not load steam_api.dll. Error: " + e.Message);
-                return;
-            }
-
-            ESteamAPIInitResult initResult = SteamAPI.InitEx(out string steamError);
-            s_Initialized = initResult == ESteamAPIInitResult.k_ESteamAPIInitResult_OK;
-            if (!s_Initialized)
-            {
-                FrizzLogger.LogError("SteamAPI.Init failed (" + initResult + "): " + steamError +
-                                    ". Start the Steam client and stay logged in. Cwd=" + System.IO.Directory.GetCurrentDirectory());
-            }
-            else
-            {
-                FrizzLogger.LogInfo("Steamworks API successfully initialized.");
             }
         }
 
