@@ -36,6 +36,7 @@ namespace FrizzNet.Steam
         private static Action<string> s_OnFailed;
         private static string s_RequiredTag;
         private static int s_PendingQueries;
+        private static bool s_Completing;
         private static readonly Dictionary<ulong, FrizzGameServerInfo> s_Results = new Dictionary<ulong, FrizzGameServerInfo>();
 
         public static void RequestServerList(
@@ -56,6 +57,7 @@ namespace FrizzNet.Steam
             s_RequiredTag = gameTag;
             s_Results.Clear();
             s_PendingQueries = 0;
+            s_Completing = false;
 
             s_InternetResponse = new ISteamMatchmakingServerListResponse(
                 OnInternetServerResponded,
@@ -92,10 +94,11 @@ namespace FrizzNet.Steam
 
         public static void Cancel()
         {
-            ReleaseRequest(ref s_InternetRequest);
-            ReleaseRequest(ref s_LanRequest);
+            AbortRequest(ref s_InternetRequest);
+            AbortRequest(ref s_LanRequest);
             ClearCallbacks();
             s_PendingQueries = 0;
+            s_Completing = false;
             s_Results.Clear();
         }
 
@@ -198,12 +201,19 @@ namespace FrizzNet.Steam
 
         private static void CompleteQuery(ref HServerListRequest request, string source, EMatchMakingServerResponse response)
         {
+            if (request == HServerListRequest.Invalid || s_Completing)
+                return;
+
             FrizzLogger.LogNetwork("[GameServerBrowser] " + source + " query finished: " + response);
-            ReleaseRequest(ref request);
+
+            // RefreshComplete already ended the query. CancelQuery here re-enters this
+            // callback on the same stack and overflows the Unity Editor.
+            ReleaseCompletedRequest(ref request);
             s_PendingQueries--;
             if (s_PendingQueries > 0)
                 return;
 
+            s_Completing = true;
             List<FrizzGameServerInfo> results = new List<FrizzGameServerInfo>(s_Results.Count);
             foreach (KeyValuePair<ulong, FrizzGameServerInfo> pair in s_Results)
                 results.Add(pair.Value);
@@ -211,17 +221,29 @@ namespace FrizzNet.Steam
             FrizzLogger.LogNetwork("[GameServerBrowser] Found " + results.Count + " dedicated servers.");
             Action<List<FrizzGameServerInfo>> onComplete = s_OnComplete;
             ClearCallbacks();
+            s_Completing = false;
             onComplete?.Invoke(results);
         }
 
-        private static void ReleaseRequest(ref HServerListRequest request)
+        private static void ReleaseCompletedRequest(ref HServerListRequest request)
         {
             if (request == HServerListRequest.Invalid)
                 return;
 
-            SteamMatchmakingServers.CancelQuery(request);
-            SteamMatchmakingServers.ReleaseRequest(request);
+            HServerListRequest handle = request;
             request = HServerListRequest.Invalid;
+            SteamMatchmakingServers.ReleaseRequest(handle);
+        }
+
+        private static void AbortRequest(ref HServerListRequest request)
+        {
+            if (request == HServerListRequest.Invalid)
+                return;
+
+            HServerListRequest handle = request;
+            request = HServerListRequest.Invalid;
+            SteamMatchmakingServers.CancelQuery(handle);
+            SteamMatchmakingServers.ReleaseRequest(handle);
         }
 
         private static void ClearCallbacks()
