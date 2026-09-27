@@ -1,6 +1,6 @@
 {
   "name": "com.frizznet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "FrizzNet",
   "description": "Steam-first multiplayer networking for Unity 6+. Steam Networking Sockets P2P, matchmaking lobbies, binary messaging, replicated objects, sync components, and Steam voice.",
   "unity": "6000.0",

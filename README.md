@@ -21,9 +21,10 @@ Host owns spawning and session flow. Clients send requests; your game code valid
 ## Requirements
 
 - Unity 6+
-- [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET)
 - Steam client running and logged in
 - A Steam App ID (`480` SpaceWar works for development)
+
+Installing FrizzNet also installs [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) into the project automatically. You do not need to add it by hand.
 
 > `SteamManager` currently hardcodes App ID `480` in `RestartAppIfNecessary`. Change that before shipping. A project-root `steam_appid.txt` helps local launches but does not replace the code change.
 

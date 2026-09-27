@@ -1,0 +1,16 @@
+{
+    "name": "FrizzNet.Editor.Dependencies",
+    "rootNamespace": "FrizzNet.Editor.Dependencies",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
