@@ -10,6 +10,7 @@ Host owns spawning and session flow. Clients send requests; your game code valid
 
 - **Steam P2P** — NAT traversal via Steam Networking Sockets
 - **Dedicated Game Server** — `SteamGameServerManager` + `SteamGameServerTransport` for headless host authority
+- **Dedicated browser** — `FrizzGameServerBrowser` queries Internet and LAN Steam Game Servers
 - **Lobbies** — create, join, invite, browse, and sync lobby metadata
 - **Messaging** — binary packets with `MessageWriter` / `MessageReader`
 - **Spawning** — host-controlled spawn/despawn with prefab registry
@@ -121,6 +122,7 @@ Player-hosted P2P lobbies stay available for local testing. A dedicated process 
 3. Call `SteamGameServerManager.Initialize()` then `Transport.StartHost` after `LoggedOn`.
 4. `LocalConnectionId` on the server is the **game server Steam ID**, not a player.
 5. Clients keep `SteamManager` + `SteamTransport` and `StartClient` to that Steam ID64.
+6. `FrizzGameServerBrowser.RequestServerList` finds advertised dedicated hosts (`gametagsand` + LAN).
 
 SpaceWar (App ID `480`) uses anonymous logon until you have a Steam App ID and GSLT. Players still need the Steam client. The dedicated box needs Steamworks Game Server DLLs, a root `steam_appid.txt` containing `480`, and outbound Steam traffic.
 
@@ -132,7 +134,7 @@ Dedicated servers do not use player lobbies for authority and do not migrate hos
 FrizzNet/
 ├── Runtime/
 │   ├── Core/          NetworkManager, identity, sync, spawners, voice, scenes
-│   ├── Steam/         SteamTransport, SteamGameServerTransport, FrizzLobby, FrizzLobbyBrowser
+│   ├── Steam/         SteamTransport, SteamGameServerTransport, FrizzLobby, FrizzLobbyBrowser, FrizzGameServerBrowser
 │   ├── Messaging/     MessageWriter, MessageReader, system message IDs
 │   ├── Transport/     INetworkTransport
 │   ├── Logging/       FrizzLogger

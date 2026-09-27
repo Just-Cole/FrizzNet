@@ -101,6 +101,22 @@ namespace FrizzNet.Steam
             s_Instance = null;
         }
 
+        public static void SetAdvertisedPlayers(int currentPlayers, int maxPlayers)
+        {
+            if (!s_Initialized || s_Instance == null)
+                return;
+
+            int clampedMax = Mathf.Clamp(maxPlayers, 1, 64);
+            int clampedCurrent = Mathf.Clamp(currentPlayers, 0, clampedMax);
+            SteamGameServer.SetMaxPlayerCount(clampedMax);
+
+            string tags = s_Instance.m_GameTags;
+            if (string.IsNullOrEmpty(tags))
+                tags = "game=2v2-shooter";
+
+            SteamGameServer.SetGameTags(tags + ",players=" + clampedCurrent);
+        }
+
         public void ApplySettings(string serverName, int maxPlayers, string gameTags, ushort gamePort, ushort queryPort)
         {
             if (!string.IsNullOrEmpty(serverName))
@@ -190,6 +206,7 @@ namespace FrizzNet.Steam
             s_SteamId = SteamGameServer.GetSteamID();
             s_LoggedOn = true;
             SteamGameServer.SetAdvertiseServerActive(true);
+            SetAdvertisedPlayers(0, s_Instance != null ? s_Instance.m_MaxPlayers : 4);
             SteamGameServerNetworkingSockets.InitAuthentication();
 
             FrizzLogger.LogInfo("Dedicated Steam Game Server logged on. Steam ID: " + s_SteamId.m_SteamID +
