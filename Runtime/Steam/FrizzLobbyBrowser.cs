@@ -27,10 +27,20 @@ namespace FrizzNet.Steam
         private static Action<List<FrizzLobbyInfo>> s_OnComplete;
         private static Action<string> s_OnFailed;
 
+        private static string s_StringFilterKey;
+        private static string s_StringFilterValue;
+
         /// <summary>
         /// Requests a list of public lobbies matching optional filters.
+        /// Pass a string key/value to isolate sessions (for example a game id) so
+        /// App ID 480 / SpaceWar browsers do not mix with other developers.
         /// </summary>
-        public static void RequestLobbyList(Action<List<FrizzLobbyInfo>> onComplete, Action<string> onFailed = null, int maxResults = 50)
+        public static void RequestLobbyList(
+            Action<List<FrizzLobbyInfo>> onComplete,
+            Action<string> onFailed = null,
+            int maxResults = 50,
+            string stringFilterKey = null,
+            string stringFilterValue = null)
         {
             if (!SteamManager.Initialized)
             {
@@ -40,9 +50,19 @@ namespace FrizzNet.Steam
 
             s_OnComplete = onComplete;
             s_OnFailed = onFailed;
+            s_StringFilterKey = stringFilterKey;
+            s_StringFilterValue = stringFilterValue;
 
             SteamMatchmaking.AddRequestLobbyListResultCountFilter(Mathf.Clamp(maxResults, 1, 50));
             SteamMatchmaking.AddRequestLobbyListDistanceFilter(ELobbyDistanceFilter.k_ELobbyDistanceFilterDefault);
+
+            if (!string.IsNullOrEmpty(stringFilterKey) && stringFilterValue != null)
+            {
+                SteamMatchmaking.AddRequestLobbyListStringFilter(
+                    stringFilterKey,
+                    stringFilterValue,
+                    ELobbyComparison.k_ELobbyComparisonEqual);
+            }
 
             SteamAPICall_t handle = SteamMatchmaking.RequestLobbyList();
             s_LobbyMatchListCallResult = CallResult<LobbyMatchList_t>.Create(OnLobbyMatchList);
@@ -64,6 +84,16 @@ namespace FrizzNet.Steam
             for (int i = 0; i < count; i++)
             {
                 CSteamID lobbyId = SteamMatchmaking.GetLobbyByIndex(i);
+
+                if (!string.IsNullOrEmpty(s_StringFilterKey))
+                {
+                    string filterValue = SteamMatchmaking.GetLobbyData(lobbyId, s_StringFilterKey);
+                    if (filterValue != s_StringFilterValue)
+                    {
+                        continue;
+                    }
+                }
+
                 string name = SteamMatchmaking.GetLobbyData(lobbyId, "name");
                 if (string.IsNullOrEmpty(name))
                 {
