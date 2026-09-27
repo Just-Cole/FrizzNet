@@ -11,17 +11,38 @@ namespace FrizzNet.Steam
 
         public static void EnsureFile()
         {
-            Environment.SetEnvironmentVariable("SteamAppId", AppId);
-            TryWrite(Directory.GetCurrentDirectory());
-
             DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
             if (projectRoot != null)
                 TryWrite(projectRoot.FullName);
+
+            if (Application.isEditor)
+            {
+                // Never stamp steam_appid.txt or SteamAppId onto the Unity Editor process.
+                // Steam then treats the editor as SpaceWar and relaunches/closes it.
+                Environment.SetEnvironmentVariable("SteamAppId", null);
+                return;
+            }
+
+            Environment.SetEnvironmentVariable("SteamAppId", AppId);
+
+            string cwd = Directory.GetCurrentDirectory();
+            if (!IsUnityEditorInstallDirectory(cwd))
+                TryWrite(cwd);
+        }
+
+        private static bool IsUnityEditorInstallDirectory(string directory)
+        {
+            if (string.IsNullOrEmpty(directory))
+                return false;
+
+            string full = Path.GetFullPath(directory);
+            return full.IndexOf("Unity" + Path.DirectorySeparatorChar + "Hub" + Path.DirectorySeparatorChar + "Editor", StringComparison.OrdinalIgnoreCase) >= 0
+                   || full.EndsWith(Path.DirectorySeparatorChar + "Editor", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void TryWrite(string directory)
         {
-            if (string.IsNullOrEmpty(directory))
+            if (string.IsNullOrEmpty(directory) || IsUnityEditorInstallDirectory(directory))
                 return;
 
             try

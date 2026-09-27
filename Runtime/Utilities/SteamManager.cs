@@ -63,14 +63,14 @@ namespace FrizzNet.Steam
 
             try
             {
-#if !UNITY_EDITOR
-                if (m_RequireSteamClient && SteamAPI.RestartAppIfNecessary((AppId_t)480))
+                // RestartAppIfNecessary relaunches through Steam and expects this process to exit.
+                // In the editor that closes Unity. Built players still use it.
+                if (!Application.isEditor && m_RequireSteamClient && SteamAPI.RestartAppIfNecessary((AppId_t)480))
                 {
                     FrizzLogger.LogWarning("Restarting app through Steam client...");
                     Application.Quit();
                     return;
                 }
-#endif
             }
             catch (DllNotFoundException e)
             {
