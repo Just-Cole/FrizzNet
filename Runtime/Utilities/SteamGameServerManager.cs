@@ -151,7 +151,7 @@ namespace FrizzNet.Steam
                 return false;
             }
 
-            EnsureSteamAppIdFile();
+            SteamAppIdUtility.EnsureFile();
 
             try
             {
@@ -204,35 +204,6 @@ namespace FrizzNet.Steam
             GameObject managerGo = new GameObject("FrizzSteamGameServerManager");
             managerGo.AddComponent<SteamGameServerManager>();
             FrizzLogger.LogInfo("Created FrizzSteamGameServerManager instance.");
-        }
-
-        private static void EnsureSteamAppIdFile()
-        {
-            const string appId = "480";
-            Environment.SetEnvironmentVariable("SteamAppId", appId);
-
-            TryWriteAppIdFile(Directory.GetCurrentDirectory(), appId);
-
-            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
-            if (projectRoot != null)
-                TryWriteAppIdFile(projectRoot.FullName, appId);
-        }
-
-        private static void TryWriteAppIdFile(string directory, string appId)
-        {
-            if (string.IsNullOrEmpty(directory))
-                return;
-
-            try
-            {
-                string path = Path.Combine(directory, "steam_appid.txt");
-                if (!File.Exists(path) || File.ReadAllText(path).Trim() != appId)
-                    File.WriteAllText(path, appId);
-            }
-            catch (Exception e)
-            {
-                FrizzLogger.LogWarning("Could not write steam_appid.txt to " + directory + ": " + e.Message);
-            }
         }
 
         private void OnServersConnected(SteamServersConnected_t callback)

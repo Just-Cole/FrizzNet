@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Steamworks;
 using FrizzNet.Logging;
@@ -58,27 +59,31 @@ namespace FrizzNet.Steam
                 return;
             }
 
+            SteamAppIdUtility.EnsureFile();
+
             try
             {
-                // If Steam client is not running, and we require it
+#if !UNITY_EDITOR
                 if (m_RequireSteamClient && SteamAPI.RestartAppIfNecessary((AppId_t)480))
                 {
                     FrizzLogger.LogWarning("Restarting app through Steam client...");
                     Application.Quit();
                     return;
                 }
+#endif
             }
-            catch (System.DllNotFoundException e)
+            catch (DllNotFoundException e)
             {
-                FrizzLogger.LogError($"[Steamworks.NET] Could not load steam_api.dll. Error: {e.Message}");
+                FrizzLogger.LogError("[Steamworks.NET] Could not load steam_api.dll. Error: " + e.Message);
                 return;
             }
 
-            // Init Steam
-            s_Initialized = SteamAPI.Init();
+            ESteamAPIInitResult initResult = SteamAPI.InitEx(out string steamError);
+            s_Initialized = initResult == ESteamAPIInitResult.k_ESteamAPIInitResult_OK;
             if (!s_Initialized)
             {
-                FrizzLogger.LogError("SteamAPI.Init() failed! Is the Steam client running and logged in?");
+                FrizzLogger.LogError("SteamAPI.Init failed (" + initResult + "): " + steamError +
+                                    ". Start the Steam client and stay logged in. Cwd=" + System.IO.Directory.GetCurrentDirectory());
             }
             else
             {
