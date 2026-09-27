@@ -72,7 +72,8 @@ namespace FrizzNet.Steam
                 }
                 else
                 {
-                    FrizzLogger.LogInfo("Steamworks API successfully initialized.");
+                    SteamNetworkingUtils.InitRelayNetworkAccess();
+                    FrizzLogger.LogInfo("Steamworks API successfully initialized. Steam Datagram Relay requested.");
                 }
             }
             catch (DllNotFoundException e)

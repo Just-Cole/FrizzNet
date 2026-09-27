@@ -190,9 +190,10 @@ namespace FrizzNet.Steam
             SteamGameServer.SetBotPlayerCount(0);
             SteamGameServer.SetMapName(m_MapName);
             SteamGameServer.SetGameTags(m_GameTags);
+            SteamGameServerNetworkingUtils.InitRelayNetworkAccess();
             SteamGameServer.LogOnAnonymous();
 
-            FrizzLogger.LogInfo("Steam Game Server API initialized. Logging on anonymously (App ID 480).");
+            FrizzLogger.LogInfo("Steam Game Server API initialized. Steam Datagram Relay requested. Logging on anonymously (App ID 480).");
             return true;
         }
 
@@ -213,9 +214,10 @@ namespace FrizzNet.Steam
             SteamGameServer.SetAdvertiseServerActive(true);
             SetAdvertisedPlayers(0, s_Instance != null ? s_Instance.m_MaxPlayers : 4);
             SteamGameServerNetworkingSockets.InitAuthentication();
+            SteamGameServerNetworkingUtils.InitRelayNetworkAccess();
 
             FrizzLogger.LogInfo("Dedicated Steam Game Server logged on. Steam ID: " + s_SteamId.m_SteamID +
-                                ". Clients can Join Dedicated with this ID.");
+                                ". Advertised to Steam for Internet + relay join.");
             LoggedOnChanged?.Invoke(true);
         }
 

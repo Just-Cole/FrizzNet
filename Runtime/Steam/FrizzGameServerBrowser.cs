@@ -29,8 +29,10 @@ namespace FrizzNet.Steam
     public static class FrizzGameServerBrowser
     {
         private static ISteamMatchmakingServerListResponse s_InternetResponse;
+        private static ISteamMatchmakingServerListResponse s_FriendsResponse;
         private static ISteamMatchmakingServerListResponse s_LanResponse;
         private static HServerListRequest s_InternetRequest = HServerListRequest.Invalid;
+        private static HServerListRequest s_FriendsRequest = HServerListRequest.Invalid;
         private static HServerListRequest s_LanRequest = HServerListRequest.Invalid;
         private static Action<List<FrizzGameServerInfo>> s_OnComplete;
         private static Action<string> s_OnFailed;
@@ -63,22 +65,36 @@ namespace FrizzNet.Steam
                 OnInternetServerResponded,
                 OnInternetServerFailed,
                 OnInternetRefreshComplete);
+            s_FriendsResponse = new ISteamMatchmakingServerListResponse(
+                OnFriendsServerResponded,
+                OnFriendsServerFailed,
+                OnFriendsRefreshComplete);
             s_LanResponse = new ISteamMatchmakingServerListResponse(
                 OnLanServerResponded,
                 OnLanServerFailed,
                 OnLanRefreshComplete);
 
-            MatchMakingKeyValuePair_t[] filters = BuildFilters(gameTag, gameDir);
             AppId_t appId = SteamUtils.GetAppID();
             if (appId == AppId_t.Invalid)
                 appId = (AppId_t)480;
 
+            // Do not apply Steam-side gamedir/dedicated filters. Those drop SpaceWar
+            // dedicated hosts from the Internet list while LAN still shows them.
+            MatchMakingKeyValuePair_t[] noFilters = Array.Empty<MatchMakingKeyValuePair_t>();
             s_InternetRequest = SteamMatchmakingServers.RequestInternetServerList(
                 appId,
-                filters,
-                (uint)filters.Length,
+                noFilters,
+                0,
                 s_InternetResponse);
             if (s_InternetRequest != HServerListRequest.Invalid)
+                s_PendingQueries++;
+
+            s_FriendsRequest = SteamMatchmakingServers.RequestFriendsServerList(
+                appId,
+                noFilters,
+                0,
+                s_FriendsResponse);
+            if (s_FriendsRequest != HServerListRequest.Invalid)
                 s_PendingQueries++;
 
             s_LanRequest = SteamMatchmakingServers.RequestLANServerList(appId, s_LanResponse);
@@ -95,6 +111,7 @@ namespace FrizzNet.Steam
         public static void Cancel()
         {
             AbortRequest(ref s_InternetRequest);
+            AbortRequest(ref s_FriendsRequest);
             AbortRequest(ref s_LanRequest);
             ClearCallbacks();
             s_PendingQueries = 0;
@@ -102,43 +119,19 @@ namespace FrizzNet.Steam
             s_Results.Clear();
         }
 
-        private static MatchMakingKeyValuePair_t[] BuildFilters(string gameTag, string gameDir)
-        {
-            List<MatchMakingKeyValuePair_t> filters = new List<MatchMakingKeyValuePair_t>(3);
-            if (!string.IsNullOrEmpty(gameDir))
-            {
-                filters.Add(new MatchMakingKeyValuePair_t
-                {
-                    m_szKey = "gamedir",
-                    m_szValue = gameDir
-                });
-            }
-
-            if (!string.IsNullOrEmpty(gameTag))
-            {
-                filters.Add(new MatchMakingKeyValuePair_t
-                {
-                    m_szKey = "gametagsand",
-                    m_szValue = gameTag
-                });
-            }
-
-            filters.Add(new MatchMakingKeyValuePair_t
-            {
-                m_szKey = "dedicated",
-                m_szValue = "1"
-            });
-            return filters.ToArray();
-        }
-
         private static void OnInternetServerResponded(HServerListRequest request, int index)
         {
-            AddServer(request, index, false);
+            AddServer(request, index);
+        }
+
+        private static void OnFriendsServerResponded(HServerListRequest request, int index)
+        {
+            AddServer(request, index);
         }
 
         private static void OnLanServerResponded(HServerListRequest request, int index)
         {
-            AddServer(request, index, true);
+            AddServer(request, index);
         }
 
         private static void OnInternetServerFailed(HServerListRequest request, int index)
@@ -149,9 +142,18 @@ namespace FrizzNet.Steam
         {
         }
 
+        private static void OnFriendsServerFailed(HServerListRequest request, int index)
+        {
+        }
+
         private static void OnInternetRefreshComplete(HServerListRequest request, EMatchMakingServerResponse response)
         {
             CompleteQuery(ref s_InternetRequest, "Internet", response);
+        }
+
+        private static void OnFriendsRefreshComplete(HServerListRequest request, EMatchMakingServerResponse response)
+        {
+            CompleteQuery(ref s_FriendsRequest, "Friends", response);
         }
 
         private static void OnLanRefreshComplete(HServerListRequest request, EMatchMakingServerResponse response)
@@ -159,7 +161,7 @@ namespace FrizzNet.Steam
             CompleteQuery(ref s_LanRequest, "LAN", response);
         }
 
-        private static void AddServer(HServerListRequest request, int index, bool requireLocalTagFilter)
+        private static void AddServer(HServerListRequest request, int index)
         {
             if (request == HServerListRequest.Invalid)
                 return;
@@ -169,7 +171,7 @@ namespace FrizzNet.Steam
                 return;
 
             string tags = item.GetGameTags();
-            if (requireLocalTagFilter && !string.IsNullOrEmpty(s_RequiredTag) && !ContainsTag(tags, s_RequiredTag))
+            if (!string.IsNullOrEmpty(s_RequiredTag) && !ContainsTag(tags, s_RequiredTag))
                 return;
 
             int playerCount = item.m_nPlayers - item.m_nBotPlayers;
@@ -251,6 +253,7 @@ namespace FrizzNet.Steam
             s_OnComplete = null;
             s_OnFailed = null;
             s_InternetResponse = null;
+            s_FriendsResponse = null;
             s_LanResponse = null;
         }
 
