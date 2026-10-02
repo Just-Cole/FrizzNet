@@ -41,12 +41,12 @@ namespace FrizzNet.Steam
         [SerializeField] [Range(1, 64)] private int m_MaxPlayers = 4;
 
         [Tooltip("Steam game tags used for later ISteamMatchmakingServers queries.")]
-        [SerializeField] private string m_GameTags = "game=2v2-shooter";
+        [SerializeField] private string m_GameTags = "game=frizznet";
 
         [Tooltip("Steam product name. SpaceWar requires Spacewar.")]
         [SerializeField] private string m_Product = "Spacewar";
 
-        [SerializeField] private string m_GameDescription = "2v2 Shooter";
+        [SerializeField] private string m_GameDescription = "FrizzNet Dedicated";
         [SerializeField] private string m_ModDir = "spacewar";
         [SerializeField] private string m_MapName = "GameScene";
         [SerializeField] private string m_VersionString = "1.0.0.0";
@@ -113,7 +113,7 @@ namespace FrizzNet.Steam
 
             string tags = s_Instance.m_GameTags;
             if (string.IsNullOrEmpty(tags))
-                tags = "game=2v2-shooter";
+                tags = "game=frizznet";
 
             SteamGameServer.SetGameTags(tags + ",players=" + clampedCurrent);
         }

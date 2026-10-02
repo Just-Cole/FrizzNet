@@ -44,7 +44,7 @@ namespace FrizzNet.Steam
         public static void RequestServerList(
             Action<List<FrizzGameServerInfo>> onComplete,
             Action<string> onFailed = null,
-            string gameTag = "game=2v2-shooter",
+            string gameTag = "game=frizznet",
             string gameDir = "spacewar")
         {
             if (!SteamManager.Initialized)
