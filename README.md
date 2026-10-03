@@ -104,6 +104,11 @@ Or browse sections directly:
 | Messaging | [Messaging](Documentation/index.html#Messaging) |
 | NetworkBehaviour / RPCs | [NetworkBehaviour](Documentation/index.html#NetworkBehaviour) |
 | Code samples | [Code samples](Documentation/index.html#CodeSamples) |
+| Session examples | [Host / join / ready-up](Documentation/index.html#SampleSession) |
+| Messaging examples | [Chat / payloads / late join](Documentation/index.html#SampleMessaging) |
+| Behaviour examples | [Lifecycle / SyncVar / RPCs](Documentation/index.html#SampleBehaviours) |
+| Dedicated examples | [Host + browser](Documentation/index.html#SampleDedicated) |
+| Spawn examples | [Spawn / player / world](Documentation/index.html#SampleSpawn) |
 | Steam transport | [SteamTransport](Documentation/index.html#SteamTransport) |
 
 ## Samples

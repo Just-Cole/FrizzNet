@@ -10,13 +10,17 @@
         function showTab(tabId) {
             const target = document.getElementById(tabId) || document.getElementById('Overview');
             const tab = target.classList.contains('tab-content') ? target : target.closest('.tab-content');
+            if (!tab) return;
             document.querySelectorAll('.tab-content').forEach(item => item.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
             tab.classList.add('active');
             const link = document.querySelector(`.nav-link[href="#${target.id}"]`) ||
                 document.querySelector(`.nav-link[href="#${tab.id}"]`);
             if (link) link.classList.add('active');
-            window.scrollTo({ top: 0, behavior: 'auto' });
+            if (target !== tab)
+                requestAnimationFrame(() => target.scrollIntoView({ behavior: 'auto', block: 'start' }));
+            else
+                window.scrollTo({ top: 0, behavior: 'auto' });
         }
 
         function handleHash() {
@@ -31,7 +35,7 @@
         }
 
         function highlightCSharp(source) {
-            const tokens = /(\/\/.*$|\/\*[\s\S]*?\*\/)|(\$?"(?:\\.|[^"\\])*")|(\b(?:using|namespace|public|private|protected|internal|sealed|abstract|static|readonly|const|class|struct|interface|enum|event|override|virtual|new|return|if|else|foreach|for|while|switch|case|break|continue|try|catch|finally|throw|in|out|ref|this|base|typeof|null|true|false)\b)|(\b(?:void|bool|byte|short|int|long|ulong|float|double|string|var|GameObject|MonoBehaviour|Vector3|Quaternion|MessageWriter|MessageReader|NetworkManager|NetworkBehaviour|NetworkIdentity|FrizzNetworkVariable|FrizzNetworkAnimator|FrizzNetworkSceneManager|FrizzServerManager|FrizzLobby|FrizzLobbyBrowser|FrizzGameServerBrowser|FrizzGameServerInfo|SteamTransport|SteamGameServerTransport|SteamGameServerManager|SteamManager|Debug|Mathf)\b)|(\b\d+(?:\.\d+)?f?\b)/gm;
+            const tokens = /(\/\/.*$|\/\*[\s\S]*?\*\/)|(\$?"(?:\\.|[^"\\])*")|(\b(?:using|namespace|public|private|protected|internal|sealed|abstract|static|readonly|const|class|struct|interface|enum|event|override|virtual|new|return|if|else|foreach|for|while|switch|case|break|continue|try|catch|finally|throw|in|out|ref|this|base|typeof|null|true|false)\b)|(\b(?:void|bool|byte|short|int|long|ulong|float|double|string|var|GameObject|MonoBehaviour|Transform|Vector2|Vector3|Quaternion|MessageWriter|MessageReader|NetworkManager|NetworkBehaviour|NetworkIdentity|FrizzNetworkVariable|FrizzNetworkAnimator|FrizzNetworkTransform|FrizzNetworkRigidbody|FrizzNetworkSceneManager|FrizzServerManager|FrizzLobby|FrizzLobbyBrowser|FrizzLobbyInfo|FrizzGameServerBrowser|FrizzGameServerInfo|SteamTransport|SteamGameServerTransport|SteamGameServerManager|SteamManager|SteamUser|SteamFriends|CSteamID|ELobbyType|FrizzPlayerSpawner|FrizzServerSpawner|FrizzHostMigration|FrizzVoiceManager|FrizzInterestManager|FrizzLogger|LoadSceneMode|CharacterController|Time|Key|Action|List|Debug|Mathf)\b)|(\b\d+(?:\.\d+)?f?\b)/gm;
             let html = '';
             let cursor = 0;
             let match;
@@ -86,6 +90,15 @@
             <li><a class="nav-link nav-core" href="#SessionModels">Listen vs dedicated</a></li>
             <li><a class="nav-link nav-core" href="#CodeSamples">Code samples</a></li>
             <li><a class="nav-link nav-core" href="#Authority">Authority</a></li>
+        </ul>
+        <div class="nav-group-title">Examples</div>
+        <ul class="nav-list">
+            <li><a class="nav-link nav-core" href="#SampleSession">Session</a></li>
+            <li><a class="nav-link nav-core" href="#SampleMessaging">Messaging</a></li>
+            <li><a class="nav-link nav-core" href="#SampleBehaviours">Behaviours</a></li>
+            <li><a class="nav-link nav-transport" href="#SampleDedicated">Dedicated</a></li>
+            <li><a class="nav-link nav-spawner" href="#SampleSpawn">Spawn</a></li>
+            <li><a class="nav-link nav-sync" href="#SampleSync">Sync &amp; voice</a></li>
         </ul>
         <div class="nav-group-title">Core</div>
         <ul class="nav-list">
@@ -218,145 +231,533 @@ FrizzServerManager.Instance.StartServer();</code></pre>
         <section id="CodeSamples" class="tab-content">
             <span class="badge">Copy-ready examples</span>
             <h1>Code Samples</h1>
-            <p class="lead">Common FrizzNet workflows.</p>
+            <p class="lead">Complete classes matched to the 1.0.10 runtime. Use positive custom message IDs. Negative IDs are reserved.</p>
+            <div class="sample-index">
+                <a href="#SampleHostLobby">Host a lobby<span>FrizzServerManager</span></a>
+                <a href="#SampleJoinLobby">Join a lobby<span>ID + password</span></a>
+                <a href="#SampleBrowseLobbies">Browse lobbies<span>FrizzLobbyBrowser</span></a>
+                <a href="#SampleReadyUp">Ready-up then load<span>Lobby metadata</span></a>
+                <a href="#SampleConnectionEvents">Connection events<span>OnConnected</span></a>
+                <a href="#SampleLeaveKick">Leave and kick<span>Session cleanup</span></a>
+                <a href="#SampleChat">Chat relay<span>Host validates</span></a>
+                <a href="#SampleTypedMessage">Typed payload<span>Writer / Reader</span></a>
+                <a href="#SampleWhisper">Whisper<span>SendToClient</span></a>
+                <a href="#SampleLateJoin">Late-join snapshot<span>Custom state</span></a>
+                <a href="#SamplePlayerLifecycle">Player lifecycle<span>Authority callbacks</span></a>
+                <a href="#SampleHealth">Health SyncVar<span>FrizzNetworkVariable</span></a>
+                <a href="#SampleRpc">Server + client RPC<span>FrizzRpc</span></a>
+                <a href="#SampleOwnerRpc">Owner RPC<span>Hit feedback</span></a>
+                <a href="#SampleInteract">World interact<span>Host validates</span></a>
+                <a href="#SampleDedicatedHost">Dedicated host<span>Game Server</span></a>
+                <a href="#SampleDedicatedBrowser">Dedicated browser<span>Join by Steam ID</span></a>
+                <a href="#SampleSpawn">Spawn and despawn<span>Host only</span></a>
+                <a href="#SamplePlayerSpawner">Player spawner<span>Manual spawn</span></a>
+                <a href="#SampleMovement">Owner movement<span>NetworkTransform</span></a>
+                <a href="#SampleAnimator">Animator trigger<span>SetTrigger</span></a>
+                <a href="#SampleVoice">Voice chat<span>FrizzVoiceManager</span></a>
+                <a href="#SampleScene">Scene load<span>Host broadcast</span></a>
+                <a href="#SampleMigration">Host migration<span>Snapshot</span></a>
+            </div>
 
-            <div class="card">
-                <h2>Custom message</h2>
+            <p class="sample-group" id="SampleSession">Session</p>
+            <div class="card" id="SampleHostLobby">
+                <h2>Host a listen-host lobby</h2>
+                <p>Creates a Steam lobby. <code>SteamTransport</code> with Auto Connect To Lobby Owner starts the listen socket for the owner.</p>
+                <pre><code>using FrizzNet.Core;
+using Steamworks;
+using UnityEngine;
+
+public sealed class HostLobbyExample : MonoBehaviour
+{
+    [SerializeField] private int _maxPlayers = 8;
+    [SerializeField] private string _lobbyName = "Co-op Session";
+    [SerializeField] private string _lobbyPassword = "";
+
+    public void Host()
+    {
+        if (FrizzServerManager.Instance == null)
+            return;
+
+        FrizzServerManager.Instance.MaxPlayers = _maxPlayers;
+        FrizzServerManager.Instance.LobbyName = _lobbyName;
+        FrizzServerManager.Instance.LobbyPassword = _lobbyPassword;
+        FrizzServerManager.Instance.LobbyType = ELobbyType.k_ELobbyTypePublic;
+        FrizzServerManager.Instance.StartServer();
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleJoinLobby">
+                <h2>Join a lobby by ID</h2>
+                <p>Password is lobby metadata checked on the joining client. It is not authentication.</p>
+                <pre><code>using FrizzNet.Steam;
+using UnityEngine;
+
+public sealed class JoinLobbyExample : MonoBehaviour
+{
+    public void Join(ulong lobbyId, string password)
+    {
+        FrizzLobby.Join(lobbyId, password);
+    }
+
+    public void Leave()
+    {
+        FrizzLobby.Leave();
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleBrowseLobbies">
+                <h2>Browse public lobbies</h2>
+                <p>Filter SpaceWar results with a string key you also write on create.</p>
+                <pre><code>using System.Collections.Generic;
+using FrizzNet.Steam;
+using UnityEngine;
+
+public sealed class LobbyBrowserExample : MonoBehaviour
+{
+    public void Refresh()
+    {
+        FrizzLobbyBrowser.RequestLobbyList(
+            HandleResults,
+            error =&gt; Debug.LogError(error),
+            maxResults: 50,
+            stringFilterKey: "game",
+            stringFilterValue: "frizznet");
+    }
+
+    private void HandleResults(List&lt;FrizzLobbyInfo&gt; results)
+    {
+        for (int i = 0; i &lt; results.Count; i++)
+        {
+            FrizzLobbyInfo lobby = results[i];
+            Debug.Log(lobby.Name + " " + lobby.MemberCount + "/" + lobby.MaxMembers);
+        }
+    }
+
+    public void JoinSelected(FrizzLobbyInfo lobby, string password)
+    {
+        FrizzLobby.Join(lobby.LobbyId.m_SteamID, password);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleReadyUp">
+                <h2>Ready-up, then load the game scene</h2>
+                <pre><code>using System.Collections.Generic;
+using FrizzNet.Core;
+using FrizzNet.Steam;
+using Steamworks;
+using UnityEngine;
+
+public sealed class LobbyReadyExample : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        FrizzLobby.OnLobbyDataUpdatedEvent += HandleLobbyDataUpdated;
+    }
+
+    private void OnDisable()
+    {
+        FrizzLobby.OnLobbyDataUpdatedEvent -= HandleLobbyDataUpdated;
+    }
+
+    public void SetReady(bool ready)
+    {
+        FrizzLobby.SetReadyState(ready);
+    }
+
+    public void InviteFriends()
+    {
+        FrizzLobby.InviteFriends();
+    }
+
+    private void HandleLobbyDataUpdated(CSteamID lobbyId, CSteamID memberId)
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
+            return;
+
+        List&lt;CSteamID&gt; members = FrizzLobby.GetMembers();
+        if (members.Count == 0)
+            return;
+
+        for (int i = 0; i &lt; members.Count; i++)
+        {
+            if (!FrizzLobby.IsMemberReady(members[i]))
+                return;
+        }
+
+        FrizzNetworkSceneManager.Instance.LoadScene("GameScene");
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleConnectionEvents">
+                <h2>Connection events</h2>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Steam;
+using UnityEngine;
+
+public sealed class ConnectionEventsExample : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        NetworkManager.OnConnected += HandleConnected;
+        NetworkManager.OnDisconnected += HandleDisconnected;
+        NetworkManager.OnClientConnected += HandleClientConnected;
+        NetworkManager.OnClientDisconnected += HandleClientDisconnected;
+    }
+
+    private void OnDisable()
+    {
+        NetworkManager.OnConnected -= HandleConnected;
+        NetworkManager.OnDisconnected -= HandleDisconnected;
+        NetworkManager.OnClientConnected -= HandleClientConnected;
+        NetworkManager.OnClientDisconnected -= HandleClientDisconnected;
+    }
+
+    private void HandleConnected()
+    {
+        Debug.Log("Connected. Local id " + NetworkManager.LocalConnectionId);
+    }
+
+    private void HandleDisconnected()
+    {
+        Debug.Log("Disconnected from host.");
+    }
+
+    private void HandleClientConnected(ulong clientId)
+    {
+        if (NetworkManager.Instance.IsDedicatedServer)
+            SteamGameServerManager.SetAdvertisedPlayers(
+                NetworkManager.Instance.ConnectedClients.Count,
+                8);
+
+        Debug.Log("Client joined " + clientId);
+    }
+
+    private void HandleClientDisconnected(ulong clientId)
+    {
+        Debug.Log("Client left " + clientId);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleLeaveKick">
+                <h2>Leave, disconnect, and kick</h2>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Steam;
+using UnityEngine;
+
+public sealed class SessionControlExample : MonoBehaviour
+{
+    public void LeaveSession()
+    {
+        if (FrizzLobby.InLobby)
+            FrizzLobby.Leave();
+
+        if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.Transport != null)
+            NetworkManager.Instance.Transport.Disconnect();
+    }
+
+    public void StopHost()
+    {
+        if (FrizzServerManager.Instance != null)
+            FrizzServerManager.Instance.StopServer();
+
+        if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.Transport != null)
+            NetworkManager.Instance.Transport.StopHost();
+    }
+
+    public void Kick(ulong steamId)
+    {
+        if (FrizzServerManager.Instance != null)
+            FrizzServerManager.Instance.KickPlayer(steamId);
+    }
+}</code></pre>
+            </div>
+
+            <p class="sample-group" id="SampleMessaging">Messaging</p>
+            <div class="card" id="SampleChat">
+                <h2>Chat relay</h2>
+                <p>Listen-host is not a client. The host broadcasts locally. Remote clients send to the host, which validates and relays.</p>
                 <pre><code>using FrizzNet.Core;
 using FrizzNet.Messaging;
 using UnityEngine;
 
 public sealed class NetworkChat : MonoBehaviour
 {
-    private const short ChatRequestId = 101;
-    private const short ChatResultId = 102;
+    private const short ChatId = 101;
 
     private void OnEnable()
     {
-        NetworkManager.Instance.RegisterHandler(ChatRequestId, HandleChatRequest);
-        NetworkManager.Instance.RegisterHandler(ChatResultId, HandleChatResult);
+        NetworkManager.Instance.RegisterHandler(ChatId, HandleChat);
     }
 
     private void OnDisable()
     {
-        if (NetworkManager.Instance == null)
-            return;
-
-        NetworkManager.Instance.UnregisterHandler(ChatRequestId);
-        NetworkManager.Instance.UnregisterHandler(ChatResultId);
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.UnregisterHandler(ChatId);
     }
 
     public void Send(string text)
     {
-        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsClient)
+        if (NetworkManager.Instance == null || string.IsNullOrWhiteSpace(text))
             return;
+
+        if (text.Length &gt; 256)
+            text = text.Substring(0, 256);
 
         using (MessageWriter writer = new MessageWriter())
         {
             writer.WriteString(text);
-            NetworkManager.Instance.SendToServer(ChatRequestId, writer, true);
+
+            if (NetworkManager.Instance.IsHost)
+            {
+                HandleLocal(NetworkManager.LocalConnectionId, text);
+                NetworkManager.Instance.SendToAll(ChatId, writer, true);
+            }
+            else if (NetworkManager.Instance.IsClient)
+            {
+                NetworkManager.Instance.SendToServer(ChatId, writer, true);
+            }
         }
     }
 
-    private void HandleChatRequest(ulong senderId, MessageReader reader)
+    private void HandleChat(ulong senderId, MessageReader reader)
     {
-        if (!NetworkManager.Instance.IsHost)
-            return;
-
         string text = reader.ReadString();
         if (string.IsNullOrWhiteSpace(text) || text.Length &gt; 256)
             return;
 
-        using (MessageWriter writer = new MessageWriter())
+        if (NetworkManager.Instance.IsHost)
         {
-            writer.WriteLong((long)senderId);
-            writer.WriteString(text);
-            NetworkManager.Instance.SendToAll(ChatResultId, writer, true);
+            using (MessageWriter writer = new MessageWriter())
+            {
+                writer.WriteString(text);
+                foreach (ulong clientId in NetworkManager.Instance.ConnectedClients)
+                {
+                    if (clientId != senderId)
+                        NetworkManager.Instance.SendToClient(clientId, ChatId, writer, true);
+                }
+            }
         }
+
+        HandleLocal(senderId, text);
     }
 
-    private void HandleChatResult(ulong senderId, MessageReader reader)
+    private void HandleLocal(ulong authorId, string text)
     {
-        ulong authorId = (ulong)reader.ReadLong();
-        string text = reader.ReadString();
-        Debug.Log($"[{authorId}] {text}");
+        Debug.Log("[" + authorId + "] " + text);
     }
 }</code></pre>
             </div>
 
-            <div class="card">
-                <h2>Host spawn and despawn</h2>
+            <div class="card" id="SampleTypedMessage">
+                <h2>Write and read every supported field</h2>
                 <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
 using UnityEngine;
 
-public sealed class HostSpawnExample : MonoBehaviour
+public sealed class TypedPayloadExample : MonoBehaviour
 {
-    [SerializeField] private GameObject _prefab;
-    private GameObject _instance;
+    private const short PayloadId = 110;
 
-    public void SpawnForClient(ulong ownerConnectionId)
+    private void OnEnable()
+    {
+        NetworkManager.Instance.RegisterHandler(PayloadId, HandlePayload);
+    }
+
+    private void OnDisable()
+    {
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.UnregisterHandler(PayloadId);
+    }
+
+    public void SendSample(Vector3 point)
+    {
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteShort(1);
+            writer.WriteInt(42);
+            writer.WriteLong(1001L);
+            writer.WriteFloat(1.5f);
+            writer.WriteDouble(2.25);
+            writer.WriteBool(true);
+            writer.WriteString("crate");
+            writer.WriteFloat(point.x);
+            writer.WriteFloat(point.y);
+            writer.WriteFloat(point.z);
+            writer.WriteBytes(new byte[] { 1, 2, 3 });
+
+            if (NetworkManager.Instance.IsHost)
+                NetworkManager.Instance.SendToAll(PayloadId, writer, true);
+            else if (NetworkManager.Instance.IsClient)
+                NetworkManager.Instance.SendToServer(PayloadId, writer, true);
+        }
+    }
+
+    private void HandlePayload(ulong senderId, MessageReader reader)
+    {
+        short kind = reader.ReadShort();
+        int count = reader.ReadInt();
+        long stamp = reader.ReadLong();
+        float speed = reader.ReadFloat();
+        double duration = reader.ReadDouble();
+        bool grounded = reader.ReadBool();
+        string id = reader.ReadString();
+        Vector3 point = new Vector3(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
+        byte[] extra = reader.ReadBytes();
+        Debug.Log(senderId + " " + kind + " " + id + " " + point);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleWhisper">
+                <h2>Host whisper to one client</h2>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
+using UnityEngine;
+
+public sealed class WhisperExample : MonoBehaviour
+{
+    private const short WhisperId = 111;
+
+    private void OnEnable()
+    {
+        NetworkManager.Instance.RegisterHandler(WhisperId, HandleWhisper);
+    }
+
+    private void OnDisable()
+    {
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.UnregisterHandler(WhisperId);
+    }
+
+    public void SendTo(ulong clientId, string text)
     {
         if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
             return;
 
-        _instance = NetworkManager.Instance.Spawn(
-            _prefab,
-            transform.position,
-            transform.rotation,
-            ownerConnectionId);
-    }
-
-    public void Despawn()
-    {
-        if (_instance != null &amp;&amp; NetworkManager.Instance.IsHost)
+        using (MessageWriter writer = new MessageWriter())
         {
-            NetworkManager.Instance.Despawn(_instance);
-            _instance = null;
+            writer.WriteString(text);
+            NetworkManager.Instance.SendToClient(clientId, WhisperId, writer, true);
         }
     }
+
+    private void HandleWhisper(ulong senderId, MessageReader reader)
+    {
+        Debug.Log("Whisper from " + senderId + ": " + reader.ReadString());
+    }
 }</code></pre>
             </div>
 
-            <div class="card">
-                <h2>Browse and join a dedicated server</h2>
+            <div class="card" id="SampleLateJoin">
+                <h2>Late-join custom snapshot</h2>
+                <p>Spawn packets restore prefab, ID, pose, and owner only. Send variables and game state yourself.</p>
                 <pre><code>using FrizzNet.Core;
-using FrizzNet.Steam;
+using FrizzNet.Messaging;
 using UnityEngine;
 
-public sealed class DedicatedJoinExample : MonoBehaviour
+public sealed class LateJoinSnapshot : MonoBehaviour
 {
-    public void Refresh()
+    private const short SnapshotId = 120;
+
+    [SerializeField] private int _roundNumber;
+
+    private void OnEnable()
     {
-        FrizzGameServerBrowser.RequestServerList(
-            results =&gt;
-            {
-                for (int i = 0; i &lt; results.Count; i++)
-                    Debug.Log(results[i].Name + " " + results[i].PingMs + "ms");
-            },
-            error =&gt; Debug.LogError(error),
-            gameTag: "game=frizznet");
+        NetworkManager.OnClientConnected += HandleClientConnected;
+        NetworkManager.Instance.RegisterHandler(SnapshotId, HandleSnapshot);
     }
 
-    public void Join(FrizzGameServerInfo server)
+    private void OnDisable()
     {
-        if (NetworkManager.Instance == null || NetworkManager.Instance.Transport == null)
+        NetworkManager.OnClientConnected -= HandleClientConnected;
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.UnregisterHandler(SnapshotId);
+    }
+
+    private void HandleClientConnected(ulong clientId)
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
             return;
 
-        NetworkManager.Instance.Transport.StartClient(server.SteamId.m_SteamID.ToString());
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteInt(_roundNumber);
+            writer.WriteInt(NetworkManager.Instance.ConnectedClients.Count);
+            NetworkManager.Instance.SendToClient(clientId, SnapshotId, writer, true);
+        }
+    }
+
+    private void HandleSnapshot(ulong senderId, MessageReader reader)
+    {
+        _roundNumber = reader.ReadInt();
+        int players = reader.ReadInt();
+        Debug.Log("Late join round " + _roundNumber + " players " + players);
     }
 }</code></pre>
             </div>
 
-            <div class="card">
-                <h2>NetworkBehaviour with a SyncVar</h2>
+            <p class="sample-group" id="SampleBehaviours">Behaviours</p>
+            <div class="card" id="SamplePlayerLifecycle">
+                <h2>Player lifecycle and local control</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class NetworkedPawn : NetworkBehaviour
+{
+    [SerializeField] private CharacterController _controller;
+    [SerializeField] private Renderer[] _bodyRenderers;
+
+    public override void OnNetworkSpawn()
+    {
+        RegisterRpcHandlers();
+    }
+
+    public override void OnStartAuthority()
+    {
+        if (_controller != null)
+            _controller.enabled = true;
+    }
+
+    public override void OnStopAuthority()
+    {
+        if (_controller != null)
+            _controller.enabled = false;
+    }
+
+    public override void OnStartLocalPlayer()
+    {
+        if (_bodyRenderers == null)
+            return;
+
+        for (int i = 0; i &lt; _bodyRenderers.Length; i++)
+        {
+            if (_bodyRenderers[i] != null)
+                _bodyRenderers[i].enabled = false;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (_controller != null)
+            _controller.enabled = false;
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleHealth">
+                <h2>Host-authored health SyncVar</h2>
                 <pre><code>using FrizzNet.Core;
 using UnityEngine;
 
 public sealed class NetworkHealth : NetworkBehaviour
 {
     private const short HealthSyncId = 1;
-    private readonly FrizzNetworkVariable&lt;int&gt; _health =
-        new FrizzNetworkVariable&lt;int&gt;(100);
+    private readonly FrizzNetworkVariable&lt;int&gt; _health = new FrizzNetworkVariable&lt;int&gt;(100);
 
     public int Health =&gt; _health.Value;
 
@@ -381,18 +782,400 @@ public sealed class NetworkHealth : NetworkBehaviour
 
     private void HandleHealthChanged(int previous, int current)
     {
-        Debug.Log($"Health: {previous} -&gt; {current}");
+        Debug.Log("Health " + previous + " -&gt; " + current);
     }
 }</code></pre>
             </div>
 
-            <div class="card">
-                <h2>Replicated Animator trigger</h2>
+            <div class="card" id="SampleRpc">
+                <h2>Server RPC and client RPC</h2>
+                <p>Keep RPC handlers on the first <code>NetworkBehaviour</code> on the object. Call <code>RegisterRpcHandlers</code> from <code>OnNetworkSpawn</code>.</p>
                 <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
+using UnityEngine;
+
+public sealed class NetworkScore : NetworkBehaviour
+{
+    private const short AddScoreRpc = 1;
+    private const short ScoreChangedRpc = 2;
+    private int _score;
+
+    public override void OnNetworkSpawn()
+    {
+        RegisterRpcHandlers();
+    }
+
+    public void RequestScore(int amount)
+    {
+        if (!HasAuthority || amount &lt;= 0)
+            return;
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteInt(amount);
+            SendServerRpc(AddScoreRpc, writer);
+        }
+    }
+
+    [FrizzRpc(AddScoreRpc, FrizzRpcTarget.Server)]
+    private void HandleAddScore(int amount)
+    {
+        if (!IsServer || amount &lt;= 0 || amount &gt; 100)
+            return;
+
+        _score += amount;
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteInt(_score);
+            SendClientRpc(ScoreChangedRpc, writer);
+        }
+    }
+
+    [FrizzRpc(ScoreChangedRpc, FrizzRpcTarget.AllClients)]
+    private void HandleScoreChanged(int score)
+    {
+        _score = score;
+        Debug.Log("Score " + _score);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleOwnerRpc">
+                <h2>Owner RPC for local feedback</h2>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
+using UnityEngine;
+
+public sealed class NetworkHitFeedback : NetworkBehaviour
+{
+    private const short HitOwnerRpc = 3;
+
+    public override void OnNetworkSpawn()
+    {
+        RegisterRpcHandlers();
+    }
+
+    public void NotifyOwnerHit(Vector3 point)
+    {
+        if (!IsServer)
+            return;
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteFloat(point.x);
+            writer.WriteFloat(point.y);
+            writer.WriteFloat(point.z);
+            SendOwnerRpc(HitOwnerRpc, writer);
+        }
+    }
+
+    [FrizzRpc(HitOwnerRpc, FrizzRpcTarget.Owner)]
+    private void HandleOwnerHit(Vector3 point)
+    {
+        Debug.Log("Local hit at " + point);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleInteract">
+                <h2>Client interact request, host validates</h2>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Messaging;
+using UnityEngine;
+
+public sealed class WorldInteract : MonoBehaviour
+{
+    private const short InteractId = 130;
+    [SerializeField] private float _maxDistance = 3f;
+
+    private void OnEnable()
+    {
+        NetworkManager.Instance.RegisterHandler(InteractId, HandleInteract);
+    }
+
+    private void OnDisable()
+    {
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.UnregisterHandler(InteractId);
+    }
+
+    public void RequestOpen(ulong chestNetworkId)
+    {
+        if (NetworkManager.Instance == null)
+            return;
+
+        using (MessageWriter writer = new MessageWriter())
+        {
+            writer.WriteLong((long)chestNetworkId);
+
+            if (NetworkManager.Instance.IsHost)
+                TryOpen(NetworkManager.LocalConnectionId, chestNetworkId);
+            else if (NetworkManager.Instance.IsClient)
+                NetworkManager.Instance.SendToServer(InteractId, writer, true);
+        }
+    }
+
+    private void HandleInteract(ulong senderId, MessageReader reader)
+    {
+        if (!NetworkManager.Instance.IsHost)
+            return;
+
+        ulong chestId = (ulong)reader.ReadLong();
+        TryOpen(senderId, chestId);
+    }
+
+    private void TryOpen(ulong senderId, ulong chestId)
+    {
+        if (!NetworkManager.Instance.NetworkObjects.TryGetValue(chestId, out NetworkIdentity chest))
+            return;
+
+        NetworkIdentity pawn = FindOwnedPawn(senderId);
+        if (pawn == null)
+            return;
+
+        float distance = Vector3.Distance(pawn.transform.position, chest.transform.position);
+        if (distance &gt; _maxDistance)
+            return;
+
+        Debug.Log("Opened chest " + chestId + " for " + senderId);
+    }
+
+    private static NetworkIdentity FindOwnedPawn(ulong ownerId)
+    {
+        foreach (NetworkIdentity identity in NetworkManager.Instance.NetworkObjects.Values)
+        {
+            if (identity != null &amp;&amp; identity.OwnerConnectionId == ownerId)
+                return identity;
+        }
+
+        return null;
+    }
+}</code></pre>
+            </div>
+
+            <p class="sample-group" id="SampleDedicated">Dedicated</p>
+            <div class="card" id="SampleDedicatedHost">
+                <h2>Dedicated Game Server bootstrap</h2>
+                <p>Do not put <code>SteamManager</code> or <code>SteamTransport</code> on this process. Wait for <code>LoggedOn</code> before <code>StartHost</code>.</p>
+                <pre><code>using FrizzNet.Core;
+using FrizzNet.Steam;
+using UnityEngine;
+
+public sealed class DedicatedHostExample : MonoBehaviour
+{
+    [SerializeField] private SteamGameServerManager _gameServer;
+    [SerializeField] private int _maxPlayers = 8;
+
+    private void OnEnable()
+    {
+        SteamGameServerManager.LoggedOnChanged += HandleLoggedOn;
+    }
+
+    private void OnDisable()
+    {
+        SteamGameServerManager.LoggedOnChanged -= HandleLoggedOn;
+    }
+
+    public void StartDedicated()
+    {
+        if (NetworkManager.Instance == null || _gameServer == null)
+            return;
+
+        NetworkManager.Instance.SetDedicatedServer(true);
+        _gameServer.ApplySettings("FrizzNet Dedicated", _maxPlayers, "game=frizznet", 27015, 27016);
+        _gameServer.Initialize();
+    }
+
+    private void HandleLoggedOn(bool loggedOn)
+    {
+        if (!loggedOn || NetworkManager.Instance == null || NetworkManager.Instance.Transport == null)
+            return;
+
+        NetworkManager.Instance.Transport.StartHost(_maxPlayers);
+        SteamGameServerManager.SetAdvertisedPlayers(0, _maxPlayers);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleDedicatedBrowser">
+                <h2>Browse and join a dedicated server</h2>
+                <pre><code>using System.Collections.Generic;
+using FrizzNet.Core;
+using FrizzNet.Steam;
+using UnityEngine;
+
+public sealed class DedicatedJoinExample : MonoBehaviour
+{
+    public void Refresh()
+    {
+        FrizzGameServerBrowser.RequestServerList(
+            HandleResults,
+            error =&gt; Debug.LogError(error),
+            gameTag: "game=frizznet",
+            gameDir: "spacewar");
+    }
+
+    public void Cancel()
+    {
+        FrizzGameServerBrowser.Cancel();
+    }
+
+    private void HandleResults(List&lt;FrizzGameServerInfo&gt; results)
+    {
+        for (int i = 0; i &lt; results.Count; i++)
+        {
+            FrizzGameServerInfo server = results[i];
+            Debug.Log(server.Name + " " + server.PlayerCount + "/" + server.MaxPlayers + " " + server.PingMs + "ms");
+        }
+    }
+
+    public void Join(FrizzGameServerInfo server)
+    {
+        if (NetworkManager.Instance == null || NetworkManager.Instance.Transport == null)
+            return;
+
+        NetworkManager.Instance.Transport.StartClient(server.SteamId.m_SteamID.ToString());
+    }
+
+    public void JoinSteamId(string steamId64)
+    {
+        if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.Transport != null)
+            NetworkManager.Instance.Transport.StartClient(steamId64);
+    }
+}</code></pre>
+            </div>
+
+            <p class="sample-group" id="SampleSpawn">Spawn</p>
+            <div class="card">
+                <h2>Host spawn and despawn</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class HostSpawnExample : MonoBehaviour
+{
+    [SerializeField] private GameObject _prefab;
+    private GameObject _instance;
+
+    public void SpawnForClient(ulong ownerConnectionId)
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
+            return;
+
+        NetworkIdentity identity = _prefab.GetComponent&lt;NetworkIdentity&gt;();
+        if (identity != null)
+            NetworkManager.Instance.RegisterSpawnablePrefab(identity);
+
+        _instance = NetworkManager.Instance.Spawn(
+            _prefab,
+            transform.position,
+            transform.rotation,
+            ownerConnectionId);
+    }
+
+    public void Despawn()
+    {
+        if (_instance != null &amp;&amp; NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.IsHost)
+        {
+            NetworkManager.Instance.Despawn(_instance);
+            _instance = null;
+        }
+    }
+
+    public bool TryGet(ulong networkId, out NetworkIdentity identity)
+    {
+        identity = null;
+        return NetworkManager.Instance != null
+            &amp;&amp; NetworkManager.Instance.NetworkObjects.TryGetValue(networkId, out identity);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SamplePlayerSpawner">
+                <h2>Manual player and world spawns</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class SpawnControlExample : MonoBehaviour
+{
+    [SerializeField] private FrizzPlayerSpawner _playerSpawner;
+    [SerializeField] private FrizzServerSpawner _serverSpawner;
+
+    public void SpawnJoiningClient(ulong clientId)
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsHost)
+            return;
+
+        if (NetworkManager.Instance.IsDedicatedServer &amp;&amp; clientId == NetworkManager.LocalConnectionId)
+            return;
+
+        _playerSpawner.SpawnPlayer(clientId);
+    }
+
+    public void SpawnWorld()
+    {
+        if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.IsHost &amp;&amp; !_serverSpawner.HasSpawned)
+            _serverSpawner.SpawnAll();
+    }
+}</code></pre>
+            </div>
+
+            <p class="sample-group" id="SampleSync">Sync, scenes, voice</p>
+            <div class="card" id="SampleMovement">
+                <h2>Owner-authored movement</h2>
+                <p><code>FrizzNetworkTransform</code> sends from the authority peer. Remotes interpolate.</p>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class OwnerMotor : NetworkBehaviour
+{
+    [SerializeField] private CharacterController _controller;
+    [SerializeField] private FrizzNetworkTransform _networkTransform;
+    [SerializeField] private float _speed = 4.2f;
+    private Vector2 _move;
+
+    public void SetMove(Vector2 move)
+    {
+        _move = move;
+    }
+
+    private void Update()
+    {
+        if (!HasAuthority || _controller == null || !_controller.enabled)
+            return;
+
+        Vector3 planar = new Vector3(_move.x, 0f, _move.y);
+        if (planar.sqrMagnitude &gt; 1f)
+            planar.Normalize();
+
+        _controller.Move(planar * _speed * Time.deltaTime);
+    }
+
+    public void SnapAndBroadcast(Vector3 position)
+    {
+        transform.position = position;
+        if (_networkTransform != null)
+            _networkTransform.ForceBroadcastState();
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleAnimator">
+                <h2>Replicated Animator trigger</h2>
+                <p>Assign <code>TargetAnimator</code> when the Animator lives on a child. Call <code>SetTrigger</code> on the network component.</p>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
 
 public sealed class NetworkAnimationExample : NetworkBehaviour
 {
     [SerializeField] private FrizzNetworkAnimator _networkAnimator;
+    [SerializeField] private Animator _childAnimator;
+
+    public override void OnNetworkSpawn()
+    {
+        if (_networkAnimator != null &amp;&amp; _childAnimator != null)
+            _networkAnimator.TargetAnimator = _childAnimator;
+    }
 
     public void Jump()
     {
@@ -402,7 +1185,65 @@ public sealed class NetworkAnimationExample : NetworkBehaviour
 }</code></pre>
             </div>
 
-            <div class="card">
+            <div class="card" id="SampleVoice">
+                <h2>Voice, interest, and scene load</h2>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+
+public sealed class SessionSystemsExample : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        FrizzNetworkSceneManager.OnSceneLoadCompleted += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        FrizzNetworkSceneManager.OnSceneLoadCompleted -= HandleSceneLoaded;
+    }
+
+    public void ConfigureVoice()
+    {
+        if (FrizzVoiceManager.Instance == null)
+            return;
+
+        FrizzVoiceManager.Instance.EnableVoice = true;
+        FrizzVoiceManager.Instance.UsePushToTalk = true;
+        FrizzVoiceManager.Instance.PushToTalkKey = Key.V;
+        FrizzVoiceManager.Instance.SpatialAudio = true;
+        FrizzVoiceManager.Instance.MaxAudioDistance = 35f;
+        FrizzVoiceManager.Instance.VolumeMultiplier = 1f;
+        FrizzVoiceManager.Instance.EnableNoiseSuppression = true;
+        FrizzVoiceManager.Instance.GateOutboundPackets = true;
+        FrizzVoiceManager.Instance.AbsoluteGateThresholdDb = -48f;
+        FrizzVoiceManager.Instance.HighPassHz = 90f;
+    }
+
+    public void ConfigureInterest(float radius)
+    {
+        if (FrizzInterestManager.Instance != null)
+        {
+            FrizzInterestManager.Instance.InterestEnabled = true;
+            FrizzInterestManager.Instance.InterestRadius = radius;
+        }
+    }
+
+    public void LoadGame()
+    {
+        if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.IsHost)
+            FrizzNetworkSceneManager.Instance.LoadScene("GameScene");
+    }
+
+    private void HandleSceneLoaded(string sceneName, LoadSceneMode mode)
+    {
+        Debug.Log("Loaded " + sceneName);
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleScene">
                 <h2>Host scene transition</h2>
                 <pre><code>using FrizzNet.Core;
 using UnityEngine;
@@ -413,6 +1254,44 @@ public sealed class NetworkSceneExample : MonoBehaviour
     {
         if (NetworkManager.Instance != null &amp;&amp; NetworkManager.Instance.IsHost)
             FrizzNetworkSceneManager.Instance.LoadScene("GameScene");
+    }
+}</code></pre>
+            </div>
+
+            <div class="card" id="SampleMigration">
+                <h2>Listen-host migration snapshot</h2>
+                <p>Captures prefab, ID, owner, pose, and next ID. Variables, Animator, Rigidbody, and scene are not included. Dedicated hosts do not migrate onto a player.</p>
+                <pre><code>using FrizzNet.Core;
+using UnityEngine;
+
+public sealed class HostMigrationExample : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        FrizzHostMigration.OnMigrationStarted += HandleStarted;
+        FrizzHostMigration.OnMigrationCompleted += HandleCompleted;
+    }
+
+    private void OnDisable()
+    {
+        FrizzHostMigration.OnMigrationStarted -= HandleStarted;
+        FrizzHostMigration.OnMigrationCompleted -= HandleCompleted;
+    }
+
+    public void BroadcastNow()
+    {
+        if (FrizzHostMigration.Instance != null)
+            FrizzHostMigration.Instance.BroadcastSnapshot();
+    }
+
+    private void HandleStarted()
+    {
+        Debug.Log("Host migration started.");
+    }
+
+    private void HandleCompleted()
+    {
+        Debug.Log("Host migration completed.");
     }
 }</code></pre>
             </div>
@@ -434,6 +1313,23 @@ public sealed class NetworkSceneExample : MonoBehaviour
             <div class="card"><h2>State</h2><table><tr><th>Member</th><th>Meaning</th></tr><tr><td><code>Instance</code></td><td>Active singleton.</td></tr><tr><td><code>LocalConnectionId</code></td><td>Steam user ID on clients and listen hosts. Game server Steam ID on dedicated.</td></tr><tr><td><code>IsHost / IsClient</code></td><td>Current transport role. Dedicated servers report <code>IsHost</code>.</td></tr><tr><td><code>IsDedicatedServer</code></td><td>This process has no player pawn and uses the Game Server API.</td></tr><tr><td><code>ConnectedClients</code></td><td>Remote clients tracked by the host.</td></tr><tr><td><code>NetworkObjects</code></td><td>Spawned identities keyed by network ID.</td></tr></table></div>
             <div class="card"><h2>Main methods</h2><table><tr><th>Method</th><th>Use</th></tr><tr><td><code>RegisterHandler / UnregisterHandler</code></td><td>One custom handler per message ID.</td></tr><tr><td><code>SendToServer</code></td><td>Client to host.</td></tr><tr><td><code>SendToClient / SendToAll</code></td><td>Host to remote clients.</td></tr><tr><td><code>RegisterSpawnablePrefab</code></td><td>Add a uniquely named prefab at runtime.</td></tr><tr><td><code>Spawn / Despawn</code></td><td>Host-only object lifetime.</td></tr><tr><td><code>SetDedicatedServer</code></td><td>Mark this process as dedicated.</td></tr></table></div>
             <div class="alert warning"><div class="alert-title">Late join</div><p>Existing objects replicate prefab, ID, position, rotation, and owner only. Send scale, variables, scene, physics, Animator, and game state yourself.</p></div>
+            <div class="card">
+                <h2>Register a handler and send</h2>
+                <pre><code>NetworkManager.Instance.RegisterHandler(101, HandleMessage);
+
+using (MessageWriter writer = new MessageWriter())
+{
+    writer.WriteString("ready");
+    if (NetworkManager.Instance.IsHost)
+        NetworkManager.Instance.SendToAll(101, writer, true);
+    else if (NetworkManager.Instance.IsClient)
+        NetworkManager.Instance.SendToServer(101, writer, true);
+}
+
+NetworkIdentity identity;
+if (NetworkManager.Instance.NetworkObjects.TryGetValue(networkId, out identity))
+    Debug.Log(identity.PrefabAssetName);</code></pre>
+            </div>
         </section>
 
         <section id="NetworkIdentity" class="tab-content">
@@ -450,6 +1346,23 @@ public sealed class NetworkSceneExample : MonoBehaviour
             <p class="lead">Identity access, authority helpers, lifecycle, RPC registration, and network variables.</p>
             <div class="card"><h2>Lifecycle</h2><p><code>OnNetworkSpawn</code>, <code>OnNetworkDespawn</code>, <code>OnStartAuthority</code>, <code>OnStopAuthority</code>, and <code>OnStartLocalPlayer</code>.</p></div>
             <div class="card"><h2>Helpers</h2><p><code>NetworkIdentity</code>, <code>NetworkId</code>, <code>HasAuthority</code>, <code>IsLocalPlayer</code>, <code>IsServer</code>, and <code>IsClient</code>.</p></div>
+            <div class="card">
+                <h2>Example</h2>
+                <pre><code>public override void OnNetworkSpawn()
+{
+    RegisterRpcHandlers();
+}
+
+public override void OnStartAuthority()
+{
+    // Enable local input and CharacterController here.
+}
+
+public override void OnStartLocalPlayer()
+{
+    // Hide first-person mesh, bind camera.
+}</code></pre>
+            </div>
         </section>
 
         <section id="Messaging" class="tab-content">
@@ -459,9 +1372,27 @@ public sealed class NetworkSceneExample : MonoBehaviour
             <div class="card"><h2>Rules</h2><ul><li>Use positive IDs for game messages. Negative IDs are reserved.</li><li>Read fields in the same order they were written.</li><li>Dispose readers and writers.</li><li>Unregister handlers when their owner disables.</li><li>Validate before relaying.</li></ul></div>
             <pre><code>using (MessageWriter writer = new MessageWriter())
 {
-    writer.WriteString(text);
-    NetworkManager.Instance.SendToServer(ChatMessageId, writer, true);
-}</code></pre>
+    writer.WriteInt(slot);
+    writer.WriteFloat(yaw);
+    writer.WriteBool(sprinting);
+    writer.WriteString(itemId);
+    writer.WriteFloat(point.x);
+    writer.WriteFloat(point.y);
+    writer.WriteFloat(point.z);
+    writer.WriteBytes(payload);
+
+    if (NetworkManager.Instance.IsHost)
+        NetworkManager.Instance.SendToAll(ItemUsedId, writer, true);
+    else if (NetworkManager.Instance.IsClient)
+        NetworkManager.Instance.SendToServer(ItemUsedId, writer, true);
+}
+
+int slot = reader.ReadInt();
+float yaw = reader.ReadFloat();
+bool sprinting = reader.ReadBool();
+string itemId = reader.ReadString();
+Vector3 point = new Vector3(reader.ReadFloat(), reader.ReadFloat(), reader.ReadFloat());
+byte[] payload = reader.ReadBytes();</code></pre>
         </section>
 
         <section id="FrizzRpc" class="tab-content">
@@ -510,7 +1441,10 @@ public sealed class NetworkScore : NetworkBehaviour
             <h1>SteamTransport</h1>
             <p class="lead">Steam Networking Sockets P2P for listen hosts and for every player client.</p>
             <div class="card"><h2>Inspector</h2><p><strong>Virtual Port</strong> selects the Steam socket channel. <strong>Auto Connect To Lobby Owner</strong> starts hosting for the lobby owner and connects other members.</p></div>
-            <div class="card"><h2>Client join</h2><p><code>StartClient</code> takes a Steam ID64 string. That can be a lobby owner or a dedicated game server ID from <code>FrizzGameServerBrowser</code>.</p></div>
+            <div class="card"><h2>Client join</h2><p><code>StartClient</code> takes a Steam ID64 string. That can be a lobby owner or a dedicated game server ID from <code>FrizzGameServerBrowser</code>.</p>
+                <pre><code>NetworkManager.Instance.Transport.StartClient(steamId64);
+NetworkManager.Instance.Transport.Disconnect();</code></pre>
+            </div>
             <div class="alert warning"><div class="alert-title">Capacity and admission</div><p>The transport does not fully enforce lobby membership or capacity on every incoming socket. Validate admission in session code. Connectivity migration does not restore gameplay state.</p></div>
         </section>
 
@@ -555,6 +1489,14 @@ SteamGameServerManager.LoggedOnChanged += loggedOn =&gt;
             <h1>SteamGameServerManager</h1>
             <p class="lead">Game Server API lifecycle, anonymous logon, advertisement, and Steam Datagram Relay.</p>
             <div class="card"><table><tr><th>Member</th><th>Use</th></tr><tr><td><code>Initialized / LoggedOn / SteamId</code></td><td>Process state after <code>GameServer.InitEx</code>.</td></tr><tr><td><code>Initialize()</code></td><td>Init, set product metadata, request relay, log on anonymously.</td></tr><tr><td><code>ApplySettings</code></td><td>Name, max players, tags, ports.</td></tr><tr><td><code>SetAdvertisedPlayers</code></td><td>Updates max players and a <code>players=</code> tag.</td></tr><tr><td><code>LoggedOnChanged</code></td><td>Subscribe before starting the listen socket.</td></tr></table></div>
+            <pre><code>SteamGameServerManager.LoggedOnChanged += loggedOn =&gt;
+{
+    if (!loggedOn)
+        return;
+
+    NetworkManager.Instance.Transport.StartHost(8);
+    SteamGameServerManager.SetAdvertisedPlayers(0, 8);
+};</code></pre>
         </section>
 
         <section id="SteamGameServerTransport" class="tab-content">
@@ -593,13 +1535,25 @@ using Steamworks;
 using UnityEngine;
 
 FrizzLobby.Create(8, ELobbyType.k_ELobbyTypePublic);
-FrizzLobby.Join(lobbyId);
+FrizzLobby.Join(lobbyId, "optional-password");
+FrizzLobby.SetMetadata("game", "frizznet");
+FrizzLobby.SetReadyState(true);
 FrizzLobby.InviteFriends();
+FrizzLobby.InviteUser(friendSteamId64);
+
+if (FrizzLobby.InLobby)
+{
+    CSteamID owner = FrizzLobby.GetOwner();
+    foreach (CSteamID member in FrizzLobby.GetMembers())
+        Debug.Log(FrizzLobby.GetMemberName(member) + " ready=" + FrizzLobby.IsMemberReady(member));
+}
 
 FrizzLobbyBrowser.RequestLobbyList(
-    results =&gt; Debug.Log($"Found {results.Count} lobbies."),
+    results =&gt; Debug.Log("Found " + results.Count + " lobbies."),
     error =&gt; Debug.LogError(error),
-    maxResults: 50);</code></pre>
+    maxResults: 50,
+    stringFilterKey: "game",
+    stringFilterValue: "frizznet");</code></pre>
             <div class="card" id="FrizzLobbyBrowser"><h2>FrizzLobbyBrowser</h2><p><code>RequestLobbyList</code> returns <code>FrizzLobbyInfo</code> entries. Keep only one request active.</p></div>
             <div class="alert danger"><div class="alert-title">Passwords are not authentication</div><p>The lobby password is visible metadata checked client-side. Kicking closes a socket. It does not ban or block reconnect.</p></div>
         </section>
@@ -616,7 +1570,10 @@ FrizzLobbyBrowser.RequestLobbyList(
             <span class="badge">Synchronizer</span>
             <h1>FrizzNetworkTransform</h1>
             <p class="lead">Owner-authored position, rotation, optional scale, thresholds, send rate, and interpolation.</p>
-            <div class="card"><p>The authority peer sends. Remotes interpolate. Updates are unreliable and replaceable. Use <code>ForceBroadcastState()</code> for an immediate sample.</p></div>
+            <div class="card"><p>The authority peer sends. Remotes interpolate. Updates are unreliable and replaceable. Use <code>ForceBroadcastState()</code> for an immediate sample.</p>
+                <pre><code>if (HasAuthority)
+    _networkTransform.ForceBroadcastState();</code></pre>
+            </div>
             <div class="alert warning"><div class="alert-title">Authority</div><p>The host relays client transform packets without complete ownership or movement validation. Validate sensitive movement separately.</p></div>
         </section>
 
@@ -624,7 +1581,11 @@ FrizzLobbyBrowser.RequestLobbyList(
             <span class="badge">Synchronizer</span>
             <h1>FrizzNetworkAnimator</h1>
             <p class="lead">Tracks float, int, and bool parameters and replicates triggers.</p>
-            <div class="card"><p>Call <code>SetTrigger</code> on <code>FrizzNetworkAnimator</code>, not directly on the Animator, when the trigger must replicate.</p></div>
+            <div class="card"><p>Call <code>SetTrigger</code> on <code>FrizzNetworkAnimator</code>, not directly on the Animator, when the trigger must replicate.</p>
+                <pre><code>_networkAnimator.TargetAnimator = childAnimator;
+if (HasAuthority)
+    _networkAnimator.SetTrigger("Jump");</code></pre>
+            </div>
             <div class="alert"><div class="alert-title">Scope</div><p>Animator states, transitions, layer time, and late-join snapshots are not serialized.</p></div>
         </section>
 
@@ -639,7 +1600,10 @@ FrizzLobbyBrowser.RequestLobbyList(
             <span class="badge">Bandwidth</span>
             <h1>FrizzInterestManager</h1>
             <p class="lead">Optional distance filtering for host relays of client-authored transform updates.</p>
-            <div class="card"><p>Configure <code>InterestRadius</code> and <code>InterestEnabled</code>. Owners remain interested. Unknown client positions default to interested.</p></div>
+            <div class="card"><p>Configure <code>InterestRadius</code> and <code>InterestEnabled</code>. Owners remain interested. Unknown client positions default to interested.</p>
+                <pre><code>FrizzInterestManager.Instance.InterestEnabled = true;
+FrizzInterestManager.Instance.InterestRadius = 50f;</code></pre>
+            </div>
             <div class="alert warning"><div class="alert-title">Narrow scope</div><p>It does not filter host transforms, voice, spawn, Animator, Rigidbody, RPC, variable, or custom traffic.</p></div>
         </section>
 
@@ -647,7 +1611,14 @@ FrizzLobbyBrowser.RequestLobbyList(
             <span class="badge">Session manager</span>
             <h1>FrizzServerManager</h1>
             <p class="lead">Steam lobby capacity, visibility, name, password metadata, startup, shutdown, and socket kicking. Listen-host only.</p>
-            <div class="card"><p><code>StartServer</code>, <code>StopServer</code>, and <code>KickPlayer</code>. Settings include <code>MaxPlayers</code>, <code>LobbyType</code>, <code>LobbyName</code>, and <code>LobbyPassword</code>.</p></div>
+            <div class="card"><p><code>StartServer</code>, <code>StopServer</code>, and <code>KickPlayer</code>. Settings include <code>MaxPlayers</code>, <code>LobbyType</code>, <code>LobbyName</code>, and <code>LobbyPassword</code>.</p>
+                <pre><code>FrizzServerManager.Instance.MaxPlayers = 8;
+FrizzServerManager.Instance.LobbyName = "Co-op Session";
+FrizzServerManager.Instance.LobbyType = ELobbyType.k_ELobbyTypeFriendsOnly;
+FrizzServerManager.Instance.StartServer();
+FrizzServerManager.Instance.KickPlayer(steamId64);
+FrizzServerManager.Instance.StopServer();</code></pre>
+            </div>
             <div class="alert danger"><div class="alert-title">Security</div><p>Password and kick are convenience controls, not secure admission or banning.</p></div>
         </section>
 
@@ -655,7 +1626,13 @@ FrizzLobbyBrowser.RequestLobbyList(
             <span class="badge">Session manager</span>
             <h1>FrizzNetworkSceneManager</h1>
             <p class="lead">Host-initiated reliable scene-load broadcast, then a synchronous Unity scene load.</p>
-            <pre><code>FrizzNetworkSceneManager.Instance.LoadScene("GameScene");</code></pre>
+            <pre><code>FrizzNetworkSceneManager.OnSceneLoadCompleted += (scene, mode) =&gt;
+{
+    Debug.Log("Loaded " + scene);
+};
+
+if (NetworkManager.Instance.IsHost)
+    FrizzNetworkSceneManager.Instance.LoadScene("GameScene");</code></pre>
             <div class="alert warning"><div class="alert-title">Readiness</div><p>No async progress, ready handshake, or late-join current-scene sync. Build those at the game-session layer.</p></div>
         </section>
 
@@ -666,6 +1643,8 @@ FrizzLobbyBrowser.RequestLobbyList(
             <div class="card"><h2>Captured</h2><p>Prefab name, object ID, owner, position, rotation, scale, and next ID seed.</p></div>
             <div class="card"><h2>Not captured</h2><p>Scene, variables, Animator, Rigidbody, custom game state, readiness, and disconnected-owner repair.</p></div>
             <div class="alert danger"><div class="alert-title">Not seamless migration</div><p>An abruptly lost host cannot send a final snapshot. Dedicated servers do not migrate onto a player. Add checkpoints before relying on this.</p></div>
+            <pre><code>FrizzHostMigration.OnMigrationCompleted += () =&gt; Debug.Log("Migration done");
+FrizzHostMigration.Instance.BroadcastSnapshot();</code></pre>
         </section>
 
         <section id="FrizzVoiceManager" class="tab-content">
@@ -692,7 +1671,11 @@ FrizzVoiceManager.Instance.HighPassHz = 90f;</code></pre>
             <div class="card"><p>Configure the player prefab, spawn points, selection mode, auto-spawn, occupied-point checks, radius, and layer mask. Dedicated hosts do not spawn a local pawn for <code>LocalConnectionId</code>.</p></div>
             <pre><code>if (NetworkManager.Instance.IsHost)
 {
+    if (NetworkManager.Instance.IsDedicatedServer &amp;&amp; ownerConnectionId == NetworkManager.LocalConnectionId)
+        return;
+
     playerSpawner.SpawnPlayer(ownerConnectionId);
+    playerSpawner.SpawnPlayer(ownerConnectionId, spawnPoint.position, spawnPoint.rotation);
 }</code></pre>
         </section>
 

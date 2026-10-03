@@ -565,6 +565,51 @@ body::after {
     margin-bottom: 0;
 }
 
+.sample-index {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1.25rem 0 2.25rem;
+}
+
+.sample-index a {
+    display: block;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: border-color var(--transition-speed), transform var(--transition-speed);
+}
+
+.sample-index a:hover {
+    border-color: rgba(16, 185, 129, 0.45);
+    transform: translateY(-1px);
+}
+
+.sample-index span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 400;
+    margin-top: 0.2rem;
+}
+
+.sample-group {
+    margin: 0 0 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.card[id] {
+    scroll-margin-top: 1.25rem;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -842,7 +887,8 @@ footer {
 
 @media (max-width: 620px) {
     .grid,
-    .compare {
+    .compare,
+    .sample-index {
         grid-template-columns: 1fr;
     }
 
