@@ -97,6 +97,9 @@ Or browse sections directly:
 | Topic | Link |
 | --- | --- |
 | Setup | [Setup](Documentation/index.html#SetupGuide) |
+| Listen host vs dedicated | [Session models](Documentation/index.html#SessionModels) |
+| Dedicated Game Server | [Steam Game Server](Documentation/index.html#DedicatedServer) |
+| Dedicated browser | [FrizzGameServerBrowser](Documentation/index.html#FrizzGameServerBrowser) |
 | Authority | [Authority](Documentation/index.html#Authority) |
 | Messaging | [Messaging](Documentation/index.html#Messaging) |
 | NetworkBehaviour / RPCs | [NetworkBehaviour](Documentation/index.html#NetworkBehaviour) |
