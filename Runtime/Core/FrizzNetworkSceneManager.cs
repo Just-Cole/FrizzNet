@@ -11,6 +11,7 @@ namespace FrizzNet.Core
     /// Host-authoritative networked scene loading. Persists across scenes when placed on the NetworkManager object.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Scene Manager")]
     public class FrizzNetworkSceneManager : MonoBehaviour
     {
         public static FrizzNetworkSceneManager Instance { get; private set; }

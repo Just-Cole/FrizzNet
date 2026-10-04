@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>FrizzNet 1.0.10 Documentation</title>
+    <title>FrizzNet 1.0.11 Documentation</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="FrizzDocs.css">
     <script>
@@ -141,7 +141,7 @@
     <main class="content">
         <section id="Overview" class="tab-content">
             <div class="hero">
-                <span class="badge">Unity 6+ · 1.0.10</span>
+                <span class="badge">Unity 6+ · 1.0.11</span>
                 <h1 class="hero-title">Frizz<span>Net</span></h1>
                 <p class="lead">Steam-first multiplayer for Unity. Listen-host P2P, dedicated Steam Game Servers, binary messages, replicated objects, and Steam voice.</p>
                 <div class="hero-actions">
@@ -160,7 +160,7 @@
                 <div class="card feature accent-transport"><div class="feature-icon">🎮</div><h2>Steam P2P</h2><p><code>SteamTransport</code> uses Steam Networking Sockets. Players host from a lobby. Steam Datagram Relay is requested after <code>SteamAPI.InitEx</code>.</p></div>
                 <div class="card feature accent-core"><div class="feature-icon">🖥️</div><h2>Dedicated Game Server</h2><p><code>SteamGameServerManager</code> plus <code>SteamGameServerTransport</code> run a headless host. Clients connect to the game server Steam ID. No player pawn on the dedicated process.</p></div>
                 <div class="card feature accent-sync"><div class="feature-icon">📡</div><h2>Replication</h2><p>Host spawn and despawn. Owner-authored transform, Animator, Rigidbody, RPCs, and network variables.</p></div>
-                <div class="card feature accent-spawner"><div class="feature-icon">🛠️</div><h2>Editor tools</h2><p>Steamworks.NET installs with the package. Runtime monitor, demo setup, and samples live under <code>Tools &gt; FrizzNet</code>.</p></div>
+                <div class="card feature accent-spawner"><div class="feature-icon">🛠️</div><h2>Editor tools</h2><p>Steamworks.NET installs with the package. <code>Tools &gt; FrizzNet &gt; Setup Network Session</code> wires a scene. The NetworkManager inspector can repair missing pieces.</p></div>
             </div>
             <div class="alert warning"><div class="alert-title">Production boundary</div><p>The host must validate client messages and owner-authored state. Late join, interest, lobby passwords, and host migration are limited. Each section states the exact behavior.</p></div>
         </section>
@@ -168,21 +168,29 @@
         <section id="SetupGuide" class="tab-content">
             <span class="badge">Getting started</span>
             <h1>Setup</h1>
-            <p class="lead">One persistent manager, one transport, matching spawnable prefabs on every peer.</p>
+            <p class="lead">Create one wired session, then register the same spawnable prefabs on every peer.</p>
             <div class="card">
                 <h2>Install</h2>
                 <p>Add FrizzNet from Git: <code>https://github.com/Just-Cole/FrizzNet.git</code>. Steamworks.NET is installed automatically. You do not add it by hand.</p>
                 <p>Requirements: Unity 6+, a running Steam client for player builds, and a Steam App ID. Development uses <code>480</code> (SpaceWar).</p>
             </div>
             <div class="card">
-                <h2>Shared player setup</h2>
+                <h2>Create a session</h2>
                 <div class="steps">
-                    <div class="step"><div class="step-number">1</div><p>Create a startup GameObject. Add <code>SteamManager</code> and <code>NetworkManager</code>.</p></div>
-                    <div class="step"><div class="step-number">2</div><p>Add <code>SteamTransport</code> on the same object and assign it to <strong>Transport Component</strong>.</p></div>
-                    <div class="step"><div class="step-number">3</div><p>Register every networked prefab (with <code>NetworkIdentity</code>) in <strong>Spawnable Prefabs</strong>.</p></div>
-                    <div class="step"><div class="step-number">4</div><p>Optionally add <code>FrizzServerManager</code>, <code>FrizzVoiceManager</code>, and <code>FrizzNetworkSceneManager</code>.</p></div>
-                    <div class="step"><div class="step-number">5</div><p>Keep a project-root <code>steam_appid.txt</code>. <code>SteamManager</code> writes <code>480</code> there in the Editor. It never writes into the Unity Editor install folder.</p></div>
+                    <div class="step"><div class="step-number">1</div><p>Open your startup scene. Choose <strong>Tools &gt; FrizzNet &gt; Setup Network Session…</strong></p></div>
+                    <div class="step"><div class="step-number">2</div><p>Pick <strong>Listen Host</strong> or <strong>Dedicated</strong>. Drop a player prefab if you have one. Click Create.</p></div>
+                    <div class="step"><div class="step-number">3</div><p>On any <code>NetworkIdentity</code> prefab, click <strong>Register On Scene NetworkManager</strong>.</p></div>
+                    <div class="step"><div class="step-number">4</div><p>If something is missing later, select the NetworkManager and click <strong>Fix Setup</strong>.</p></div>
                 </div>
+                <p>Menu shortcuts: <code>Tools &gt; FrizzNet &gt; Create Listen Host Session</code> and <code>GameObject &gt; FrizzNet</code>. The wizard writes project-root <code>steam_appid.txt</code> (<code>480</code>). It never writes into the Unity Editor install folder.</p>
+            </div>
+            <div class="card">
+                <h2>What the wizard adds</h2>
+                <table>
+                    <tr><th>Listen host</th><th>Dedicated</th></tr>
+                    <tr><td><code>SteamManager</code>, <code>SteamTransport</code>, <code>NetworkManager</code>, optional lobby / voice / scene / migration</td><td><code>SteamGameServerManager</code>, <code>SteamGameServerTransport</code>, <code>NetworkManager</code> with <code>IsDedicatedServer</code></td></tr>
+                </table>
+                <p>The transport is assigned automatically. Do not mix the two transports on the same GameObject.</p>
             </div>
             <div class="card">
                 <h2>Listen-host session</h2>
@@ -231,7 +239,7 @@ FrizzServerManager.Instance.StartServer();</code></pre>
         <section id="CodeSamples" class="tab-content">
             <span class="badge">Copy-ready examples</span>
             <h1>Code Samples</h1>
-            <p class="lead">Complete classes matched to the 1.0.10 runtime. Use positive custom message IDs. Negative IDs are reserved.</p>
+            <p class="lead">Complete classes matched to the 1.0.11 runtime. Use positive custom message IDs. Negative IDs are reserved.</p>
             <div class="sample-index">
                 <a href="#SampleHostLobby">Host a lobby<span>FrizzServerManager</span></a>
                 <a href="#SampleJoinLobby">Join a lobby<span>ID + password</span></a>
@@ -1690,7 +1698,7 @@ FrizzVoiceManager.Instance.HighPassHz = 90f;</code></pre>
 }</code></pre>
         </section>
 
-        <footer><span class="footer-brand">FrizzNet 1.0.10</span> · local documentation verified against the current runtime</footer>
+        <footer><span class="footer-brand">FrizzNet 1.0.11</span> · local documentation verified against the current runtime</footer>
     </main>
 </div>
 </body>

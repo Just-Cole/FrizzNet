@@ -8,6 +8,7 @@ namespace FrizzNet.Core
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
     [RequireComponent(typeof(Rigidbody))]
+    [AddComponentMenu("FrizzNet/Network Rigidbody")]
     public class FrizzNetworkRigidbody : NetworkBehaviour
     {
         [Header("Sync Settings")]

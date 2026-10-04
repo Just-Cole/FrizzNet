@@ -10,6 +10,7 @@ namespace FrizzNet.Core
     /// to clients that are within range of the object or its owner.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Interest Manager")]
     public class FrizzInterestManager : MonoBehaviour
     {
         public static FrizzInterestManager Instance { get; private set; }

@@ -10,6 +10,7 @@ namespace FrizzNet.Steam
     /// running callbacks every frame, and shutting down on application quit.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Steam Manager")]
     public class SteamManager : MonoBehaviour
     {
         private static SteamManager s_Instance;

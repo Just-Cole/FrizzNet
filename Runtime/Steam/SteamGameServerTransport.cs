@@ -14,6 +14,7 @@ namespace FrizzNet.Steam
     /// StartClient is unused; players connect with SteamTransport.ConnectP2P to the game server Steam ID.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Steam Game Server Transport")]
     public class SteamGameServerTransport : MonoBehaviour, INetworkTransport
     {
         public static SteamGameServerTransport Instance { get; private set; }

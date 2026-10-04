@@ -7,6 +7,7 @@ namespace FrizzNet.Core
     /// Manages network identity, owner authority, and player association.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Network Identity")]
     public class NetworkIdentity : MonoBehaviour
     {
         [Header("Network Identity")]

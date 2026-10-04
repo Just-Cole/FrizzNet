@@ -13,6 +13,7 @@ namespace FrizzNet.Core
     /// (e.g. world obstacles, interactable chests, NPCs) at designated locations when the host session starts.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Server Spawner")]
     public class FrizzServerSpawner : MonoBehaviour
     {
         [System.Serializable]

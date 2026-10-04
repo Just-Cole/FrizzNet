@@ -5,6 +5,7 @@ using Steamworks;
 using FrizzNet.Core;
 using FrizzNet.Steam;
 using FrizzNet.Logging;
+using FrizzNet.Editor;
 
 namespace FrizzNet.Editor.Windows
 {
@@ -60,6 +61,9 @@ namespace FrizzNet.Editor.Windows
             m_ScrollPosition = EditorGUILayout.BeginScrollView(m_ScrollPosition, GUIStyle.none, GUI.skin.verticalScrollbar);
             GUILayout.BeginVertical(new GUIStyle { padding = new RectOffset(12, 12, 12, 12) });
 
+            DrawSetup();
+            GUILayout.Space(12);
+
             DrawSteamStatus();
             GUILayout.Space(12);
 
@@ -114,6 +118,30 @@ namespace FrizzNet.Editor.Windows
             titleStyle.normal.textColor = m_NeonGreen;
             Rect titleRect = new Rect(headerRect.x, headerRect.y + 12, headerRect.width, 26);
             EditorGUI.LabelField(titleRect, "FRIZZNET", titleStyle);
+        }
+
+        private void DrawSetup()
+        {
+            BeginSection("Project Setup");
+
+            if (GUILayout.Button("SETUP NETWORK SESSION…", GUILayout.Height(28)))
+                FrizzNetSetupWindow.ShowWindow();
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("LISTEN HOST", GUILayout.Height(24)))
+                FrizzNetSessionSetup.CreateListenHostSession();
+            if (GUILayout.Button("DEDICATED", GUILayout.Height(24)))
+                FrizzNetSessionSetup.CreateDedicatedSession();
+            EditorGUILayout.EndHorizontal();
+
+            if (!FrizzNetSessionSetup.HasSteamAppIdFile())
+            {
+                DrawNotificationBox("Project-root steam_appid.txt is missing. Development uses App ID 480.", MessageType.Warning);
+                if (GUILayout.Button("WRITE STEAM_APPID.TXT"))
+                    FrizzNetSessionSetup.EnsureSteamAppIdFile();
+            }
+
+            EndSection();
         }
 
         private void DrawSteamStatus()
@@ -352,7 +380,7 @@ namespace FrizzNet.Editor.Windows
                 alignment = TextAnchor.MiddleCenter
             };
             footerStyle.normal.textColor = m_TextMuted;
-            EditorGUI.LabelField(footerRect, "FrizzNet v1.0.0 Stable • Developed in Planning Mode", footerStyle);
+            EditorGUI.LabelField(footerRect, "FrizzNet v1.0.11 • Tools > FrizzNet > Setup Network Session", footerStyle);
         }
 
         #region UI Component Helpers

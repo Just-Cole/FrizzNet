@@ -11,6 +11,7 @@ namespace FrizzNet.Core
     /// Acts as a central host/session manager.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Server Manager")]
     public class FrizzServerManager : MonoBehaviour
     {
         public static FrizzServerManager Instance { get; private set; }

@@ -5,7 +5,7 @@ using FrizzNet.Logging;
 
 namespace FrizzNet.Steam
 {
-    internal static class SteamAppIdUtility
+    public static class SteamAppIdUtility
     {
         public const string AppId = "480";
 

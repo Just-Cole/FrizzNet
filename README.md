@@ -18,7 +18,7 @@ Host owns spawning and session flow. Clients send requests; your game code valid
 - **Sync** — transform, animator, and rigidbody replication
 - **Scenes** — host-initiated networked scene loads
 - **Voice** — Steam push-to-talk / spatial voice chat with noise suppression (high-pass + adaptive gate)
-- **Tools** — runtime monitor (`Tools > FrizzNet`), demo scene setup, samples
+- **Tools** — session wizard (`Tools > FrizzNet > Setup Network Session`), inspector Fix Setup, runtime monitor, demo scenes
 
 ## Requirements
 
@@ -32,11 +32,10 @@ Installing FrizzNet also installs [Steamworks.NET](https://github.com/rlabrecque
 
 ## Quick start
 
-1. Create a GameObject named `NetworkManager`.
-2. Add `NetworkManager` and `SteamTransport`.
-3. Assign `SteamTransport` to **Transport Component**.
-4. Add your networked prefabs (with `NetworkIdentity`) to **Spawnable Prefabs**.
-5. Optionally add `FrizzServerManager`, `FrizzVoiceManager`, and `FrizzNetworkSceneManager`.
+1. Open your startup scene.
+2. Use **Tools > FrizzNet > Setup Network Session…** and pick Listen Host or Dedicated.
+3. Register each `NetworkIdentity` prefab from its inspector, or drop it on NetworkManager **Add Spawnable Prefab**.
+4. If a transport or Steam component is missing, select NetworkManager and click **Fix Setup**.
 
 ```csharp
 using FrizzNet.Core;

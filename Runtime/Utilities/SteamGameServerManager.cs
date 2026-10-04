@@ -12,6 +12,7 @@ namespace FrizzNet.Steam
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
+    [AddComponentMenu("FrizzNet/Steam Game Server Manager")]
     public class SteamGameServerManager : MonoBehaviour
     {
         private static SteamGameServerManager s_Instance;

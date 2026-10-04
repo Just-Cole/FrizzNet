@@ -3,8 +3,6 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using FrizzNet.Core;
-using FrizzNet.Steam;
 using FrizzNet.Samples;
 
 namespace FrizzNet.Editor
@@ -36,17 +34,16 @@ namespace FrizzNet.Editor
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
-            GameObject networkRoot = new GameObject("FrizzNet");
-            networkRoot.AddComponent<NetworkManager>();
-            networkRoot.AddComponent<SteamTransport>();
-            networkRoot.AddComponent<FrizzServerManager>();
-            networkRoot.AddComponent<FrizzVoiceManager>();
-            networkRoot.AddComponent<FrizzNetworkSceneManager>();
-            networkRoot.AddComponent<FrizzHostMigration>();
-            networkRoot.AddComponent<FrizzInterestManager>();
-
-            GameObject steamManager = new GameObject("SteamManager");
-            steamManager.AddComponent<SteamManager>();
+            FrizzNetSessionSetup.CreateOrRepair(new FrizzNetSessionOptions
+            {
+                Kind = FrizzNetSessionKind.ListenHost,
+                ObjectName = "FrizzNet",
+                IncludeServerManager = true,
+                IncludeSceneManager = true,
+                IncludeVoice = true,
+                IncludeHostMigration = true,
+                IncludeInterest = true
+            });
 
             GameObject sampleUi = new GameObject("SampleUI");
             sampleUi.AddComponent<LobbyExample>();

@@ -14,6 +14,7 @@ namespace FrizzNet.Core
     /// and manages active speaker outputs.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Voice Manager")]
     public class FrizzVoiceManager : MonoBehaviour
     {
         public static FrizzVoiceManager Instance { get; private set; }

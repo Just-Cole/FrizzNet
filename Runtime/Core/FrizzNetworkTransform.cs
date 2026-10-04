@@ -8,6 +8,7 @@ namespace FrizzNet.Core
     /// Uses interpolation for smooth rendering of remote objects.
     /// </summary>
     [RequireComponent(typeof(NetworkIdentity))]
+    [AddComponentMenu("FrizzNet/Network Transform")]
     public class FrizzNetworkTransform : NetworkBehaviour
     {
 

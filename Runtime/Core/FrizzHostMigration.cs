@@ -11,6 +11,7 @@ namespace FrizzNet.Core
     /// Attach to the same GameObject as NetworkManager.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Host Migration")]
     public class FrizzHostMigration : MonoBehaviour
     {
         public static FrizzHostMigration Instance { get; private set; }

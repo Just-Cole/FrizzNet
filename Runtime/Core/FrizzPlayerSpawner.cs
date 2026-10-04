@@ -19,6 +19,7 @@ namespace FrizzNet.Core
     /// and synchronizes authority across the network.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Player Spawner")]
     public class FrizzPlayerSpawner : MonoBehaviour
     {
         [Header("Spawn Settings")]

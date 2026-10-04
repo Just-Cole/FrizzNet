@@ -14,6 +14,7 @@ namespace FrizzNet.Core
     /// message routing, and dynamic object spawning.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("FrizzNet/Network Manager")]
     public class NetworkManager : MonoBehaviour
     {
         public static NetworkManager Instance { get; private set; }
@@ -115,16 +116,38 @@ namespace FrizzNet.Core
 #if UNITY_EDITOR
         private void Reset()
         {
-            if (m_TransportComponent == null)
-            {
-                m_TransportComponent = GetComponent<INetworkTransport>() as MonoBehaviour;
-                if (m_TransportComponent == null)
-                {
-                    m_TransportComponent = GetComponent<SteamTransport>();
-                }
-            }
+            AutoAssignTransportComponent();
         }
 #endif
+
+        /// <summary>
+        /// Adds a prefab to the serialized spawnable list and the runtime registry.
+        /// </summary>
+        public bool TryAddSpawnablePrefab(NetworkIdentity prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            if (!m_SpawnablePrefabs.Contains(prefab))
+                m_SpawnablePrefabs.Add(prefab);
+
+            RegisterSpawnablePrefab(prefab);
+            return true;
+        }
+
+        internal void AutoAssignTransportComponent()
+        {
+            if (m_TransportComponent != null)
+                return;
+
+            MonoBehaviour transport = GetComponent<INetworkTransport>() as MonoBehaviour;
+            if (transport == null)
+                transport = GetComponent<SteamTransport>();
+            if (transport == null)
+                transport = GetComponent<SteamGameServerTransport>();
+
+            m_TransportComponent = transport;
+        }
 
         private void Start()
         {
@@ -159,6 +182,9 @@ namespace FrizzNet.Core
         {
             if (m_Transport != null)
                 return;
+
+            if (m_TransportComponent == null)
+                AutoAssignTransportComponent();
 
             if (m_TransportComponent == null)
             {
